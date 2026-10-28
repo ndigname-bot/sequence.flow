@@ -58,6 +58,96 @@ const INITIAL_TASKS = [
   }
 ];
 
+const INITIAL_NOTES = [
+  {
+    id: 'n-1',
+    title: 'Homepage direction',
+    project: 'Website redesign',
+    category: '3 session notes',
+    time: '14:32',
+    date: 'OCT 27, 2026',
+    sessionInfo: '3 notes from a 30 min focus',
+    calloutTitle: 'Explore the new homepage direction',
+    callout: 'The homepage should feel like an invitation to focus, not another tool asking for attention.',
+    points: [
+      {
+        num: '01',
+        title: 'One clear promise',
+        desc: 'Lead with the feeling of making progress. Keep the opening message simple: less switching, more meaningful work.'
+      },
+      {
+        num: '02',
+        title: 'Give the product room',
+        desc: 'Explore a wider, editorial hero. Show one real focus session rather than a collage of features. Let the interface tell the story.'
+      },
+      {
+        num: '03',
+        title: 'Quiet by design',
+        desc: 'Use generous spacing, a restrained blue accent and a single primary action. Motion should guide, never compete.'
+      }
+    ],
+    actionItem: {
+      title: 'Sketch two hero directions',
+      sub: 'Carry into the next design exploration session'
+    }
+  },
+  {
+    id: 'n-2',
+    title: 'A quieter first impression',
+    project: 'Website redesign',
+    category: 'Exploration',
+    time: '11:20',
+    date: 'OCT 27, 2026',
+    sessionInfo: 'Design exploration notes',
+    calloutTitle: 'A quieter first impression',
+    callout: 'Remove visual clutter so the mind can latch onto the single primary task without cognitive overload.'
+  },
+  {
+    id: 'n-3',
+    title: 'First-run friction & opportunities',
+    project: 'Product strategy',
+    category: 'Research',
+    time: '09:45',
+    date: 'OCT 26, 2026',
+    sessionInfo: 'Research synthesis',
+    calloutTitle: 'First-run friction',
+    callout: 'The first 3 minutes of a focus session dictate whether the user stays in the zone or context-switches.'
+  },
+  {
+    id: 'n-4',
+    title: 'Component library principles',
+    project: 'Website redesign',
+    category: 'Decision log',
+    time: 'Yesterday',
+    date: 'OCT 26, 2026',
+    sessionInfo: 'Design architecture',
+    calloutTitle: 'Design tokens & obsidian themes',
+    callout: 'Keep components dark, obsidian-tinted with cyan and electric blue accents.'
+  },
+  {
+    id: 'n-5',
+    title: 'What makes a useful onboarding?',
+    project: 'Product strategy',
+    category: 'Ideas',
+    time: 'Yesterday',
+    date: 'OCT 26, 2026',
+    sessionInfo: 'Product strategy reflections',
+    calloutTitle: 'Frictionless onboarding',
+    callout: 'Do not force a 10-step wizard. Launch straight into a single focused 25-minute sprint.'
+  },
+  {
+    id: 'n-6',
+    title: 'A week with fewer open loops',
+    project: 'Personal',
+    category: 'Reflection',
+    time: 'Oct 25',
+    date: 'OCT 25, 2026',
+    sessionInfo: 'Weekly retrospective',
+    calloutTitle: 'Closing loops',
+    callout: 'Clearing open browser tabs and pending queue items before logging off dramatically reduces morning dread.'
+  }
+];
+
 export default function App() {
   // App UI Layout State: 'companion' (mini-window) | 'ball' (floating Gemini orb) | 'full' (studio dashboard)
   const [appMode, setAppMode] = useState(() => {
@@ -98,8 +188,8 @@ export default function App() {
 
   // Notes
   const [vaultNotes, setVaultNotes] = useState(() => {
-    const saved = localStorage.getItem('sequence_vault_notes_v5');
-    return saved ? JSON.parse(saved) : [];
+    const saved = localStorage.getItem('sequence_vault_notes_v6');
+    return saved ? JSON.parse(saved) : INITIAL_NOTES;
   });
 
   // Focus Countdown
@@ -119,6 +209,15 @@ export default function App() {
   // Sync state
   useEffect(() => {
     localStorage.setItem('sequence_app_mode', appMode);
+    if (window.electronAPI) {
+      if (appMode === 'companion') {
+        window.electronAPI.setCompanionOverlay(true);
+      } else if (appMode === 'ball') {
+        window.electronAPI.setBallOverlay(true);
+      } else {
+        window.electronAPI.setCompanionOverlay(false);
+      }
+    }
   }, [appMode]);
 
   useEffect(() => {
@@ -126,7 +225,7 @@ export default function App() {
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem('sequence_vault_notes_v5', JSON.stringify(vaultNotes));
+    localStorage.setItem('sequence_vault_notes_v6', JSON.stringify(vaultNotes));
   }, [vaultNotes]);
 
   useEffect(() => {
