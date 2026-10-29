@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sequence Flow</string>
+    <string name="title_activity_main">Sequence Flow</string>
+    <string name="package_name">com.sequence.flow</string>
+    <string name="custom_url_scheme">com.sequence.flow</string>
+</resources>
