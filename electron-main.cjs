@@ -14,6 +14,7 @@ function createWindow() {
     minWidth: 420,
     minHeight: 300,
     frame: true,
+    autoHideMenuBar: true,
     backgroundColor: '#04070F',
     webPreferences: {
       nodeIntegration: false,
@@ -22,6 +23,8 @@ function createWindow() {
     },
     icon: path.join(__dirname, 'public/icon.svg')
   });
+
+  mainWindow.setMenuBarVisibility(false);
 
   // Load from local Vite dev server or production dist
   const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';

@@ -90,6 +90,18 @@ export default function App() {
 
   const activeTask = tasks.find(t => !t.completed) || tasks[0] || null;
 
+  // Purge any legacy dummy data keys on startup
+  useEffect(() => {
+    const legacyKeys = [
+      'sequence_flow_tasks_v5', 
+      'sequence_vault_notes_v5', 
+      'sequence_vault_notes_v6', 
+      'sequence_projects_v3', 
+      'sequence_sessions_count_v5'
+    ];
+    legacyKeys.forEach(k => localStorage.removeItem(k));
+  }, []);
+
   // Sync state
   useEffect(() => {
     localStorage.setItem('sequence_app_mode', appMode);
