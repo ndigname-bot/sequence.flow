@@ -51,7 +51,7 @@ export default function LeftSidebar({
   };
 
   return (
-    <aside className="w-64 border-r border-slate-800/80 bg-[#070B12] flex flex-col justify-between shrink-0 select-none overflow-y-auto">
+    <aside className="hidden md:flex w-64 border-r border-slate-800/80 bg-[#070B12] flex-col justify-between shrink-0 select-none overflow-y-auto">
       <div className="p-3.5 space-y-5">
         {/* Workspace Switcher */}
         <div 

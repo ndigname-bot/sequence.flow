@@ -1,39 +1,73 @@
-// Web Notifications helper with OS notification support and in-app fallback
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
+
 class NotificationManager {
   constructor() {
+    this.isNative = Capacitor.isNativePlatform();
     this.permission = (typeof window !== 'undefined' && 'Notification' in window) 
       ? Notification.permission 
       : 'default';
   }
 
   isSupported() {
-    return typeof window !== 'undefined' && 'Notification' in window;
+    return this.isNative || (typeof window !== 'undefined' && 'Notification' in window);
   }
 
   async requestPermission() {
-    if (!this.isSupported()) return 'denied';
-    try {
-      const res = await Notification.requestPermission();
-      this.permission = res;
-      return res;
-    } catch (e) {
-      console.warn('Error requesting notification permission', e);
-      return 'denied';
+    if (this.isNative) {
+      try {
+        const status = await LocalNotifications.requestPermissions();
+        return status.display;
+      } catch (e) {
+        console.warn('Native notification permission error', e);
+        return 'denied';
+      }
     }
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const res = await Notification.requestPermission();
+        this.permission = res;
+        return res;
+      } catch (e) {
+        console.warn('Error requesting web notification permission', e);
+        return 'denied';
+      }
+    }
+    return 'denied';
   }
 
-  // Trigger a native OS notification
-  notify({ title, body, icon, tag = 'sequence-alert' }) {
-    if (!this.isSupported()) return null;
+  // Trigger a native OS notification (Android Notification Bar or Desktop OS Notification)
+  async notify({ title, body, icon, tag = 'sequence-alert', id = Date.now() }) {
+    if (this.isNative) {
+      try {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title,
+              body,
+              id: Number(String(id).slice(-7)),
+              schedule: { at: new Date(Date.now() + 100) },
+              sound: 'beep.wav',
+              smallIcon: 'ic_launcher_round',
+              actionTypeId: 'SEQUENCE_ACTION'
+            }
+          ]
+        });
+        return;
+      } catch (err) {
+        console.warn('Capacitor local notification error:', err);
+      }
+    }
 
-    if (Notification.permission === 'granted') {
+    // Web Notification Fallback
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
         const notif = new Notification(title, {
           body,
-          icon: icon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232563EB"><circle cx="12" cy="12" r="10"/></svg>',
+          icon: icon || '/icon.svg',
           tag,
           renotify: true,
-          requireInteraction: false,
           silent: false
         });
 
@@ -44,10 +78,9 @@ class NotificationManager {
 
         return notif;
       } catch (err) {
-        console.warn('Notification failed:', err);
+        console.warn('Web notification failed:', err);
       }
     }
-    return null;
   }
 }
 

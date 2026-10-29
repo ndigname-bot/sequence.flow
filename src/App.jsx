@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import { Sparkles, Bookmark, CheckSquare } from 'lucide-react';
 import TopNav from './components/TopNav';
 import LeftSidebar from './components/LeftSidebar';
 import HeroFocusCard from './components/HeroFocusCard';
@@ -595,6 +596,46 @@ export default function App() {
                 onOpenSprints={() => setCurrentView('sprints')}
               />
             )}
+          </div>
+
+          {/* MOBILE BOTTOM NAVIGATION BAR (md:hidden) */}
+          <div className="md:hidden flex items-center justify-around py-3 px-4 bg-[#070B14]/95 border-t border-slate-800/80 backdrop-blur-lg shrink-0 z-30">
+            <button
+              onClick={() => setCurrentView('focus')}
+              className={`flex flex-col items-center gap-1 text-[10px] font-medium transition ${
+                currentView === 'focus' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Focus</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('notebook')}
+              className={`flex flex-col items-center gap-1 text-[10px] font-medium transition ${
+                currentView === 'notebook' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+              }`}
+            >
+              <Bookmark className="w-4 h-4" />
+              <span>Notebook</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('all_tasks')}
+              className={`flex flex-col items-center gap-1 text-[10px] font-medium transition ${
+                currentView === 'all_tasks' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+              }`}
+            >
+              <CheckSquare className="w-4 h-4" />
+              <span>Queue</span>
+            </button>
+            <button
+              onClick={() => setAppMode('companion')}
+              className="flex flex-col items-center gap-1 text-[10px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400"
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-600 to-violet-500 flex items-center justify-center p-0.5 shadow-glow-cyan">
+                <span className="w-2 h-2 rounded-full bg-white" />
+              </div>
+              <span>Companion</span>
+            </button>
           </div>
         </div>
       )}

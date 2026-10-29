@@ -29,7 +29,7 @@ export default function RightSidebar({
   const activeSegments = Math.min(totalSegments, Math.round((focusedMins / (goalMinutes || 120)) * totalSegments));
 
   return (
-    <aside className="w-80 border-l border-slate-800/80 bg-[#070B12] p-5 space-y-6 shrink-0 select-none overflow-y-auto">
+    <aside className="hidden xl:flex w-80 border-l border-slate-800/80 bg-[#070B12] p-5 flex-col space-y-6 shrink-0 select-none overflow-y-auto">
       {/* 1. TODAY'S MOMENTUM (Real Dynamic Calculations) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-slate-500">
