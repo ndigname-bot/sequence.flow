@@ -8,8 +8,16 @@
   }
   
   body {
-    @apply bg-[#080B10] text-slate-100 overflow-x-hidden min-h-screen selection:bg-blue-600/30 selection:text-blue-200;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply bg-[#080B10] text-slate-100 font-sans overflow-x-hidden min-h-screen selection:bg-blue-600/30 selection:text-blue-200;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+    letter-spacing: -0.011em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.025em;
   }
 
   /* Custom subtle scrollbar */
