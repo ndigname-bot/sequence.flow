@@ -15,10 +15,11 @@ export default function SessionCompleteTray({
   task, 
   onStartBreak, 
   onOpenNotebook,
-  notesCount = 3,
-  focusedMinutes = 30,
-  sprintCompleted = 2,
-  sprintTotal = 4
+  notesCount = 0,
+  focusedMinutes = 25,
+  sprintCompleted = 1,
+  sprintTotal = 4,
+  latestNote
 }) {
   if (!isOpen) return null;
 
@@ -61,7 +62,7 @@ export default function SessionCompleteTray({
               A good place to pause.
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              {task?.title || 'Explore the new homepage direction'}
+              {task?.title || 'Session completed'}
             </p>
           </div>
         </div>
@@ -88,7 +89,7 @@ export default function SessionCompleteTray({
             SAVED TO YOUR NOTEBOOK
           </span>
           <p className="text-xs text-slate-300 font-sans leading-relaxed">
-            "Lead with one clear promise. Explore an editorial hero with more room for the product story."
+            {latestNote ? `"${latestNote}"` : `"Your focus session is logged in your notebook. Clear mind, zero open loops."`}
           </p>
         </div>
 

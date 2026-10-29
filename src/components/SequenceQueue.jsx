@@ -11,11 +11,12 @@ import {
 } from 'lucide-react';
 
 export default function SequenceQueue({ 
-  tasks, 
+  tasks = [], 
   onAddTask, 
   onToggleComplete, 
   onPromoteTask, 
-  onDeleteTask 
+  onDeleteTask,
+  activeProject = 'General'
 }) {
   const [showAddInput, setShowAddInput] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -27,7 +28,7 @@ export default function SequenceQueue({
     onAddTask({
       id: `task-${Date.now()}`,
       title: newTaskTitle.trim(),
-      project: 'Website redesign',
+      project: activeProject || 'General',
       duration: newTaskMin,
       completed: false
     });
@@ -49,10 +50,9 @@ export default function SequenceQueue({
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-1 text-slate-400 hover:text-slate-200 transition text-xs">
-            <span>Design exploration</span>
-            <ChevronDown className="w-3 h-3 text-slate-500" />
-          </button>
+          <span className="text-slate-400 text-xs font-mono">
+            {activeProject}
+          </span>
 
           <button
             onClick={() => setShowAddInput(!showAddInput)}
@@ -139,7 +139,7 @@ export default function SequenceQueue({
                   </p>
                   <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
                     <span className="w-1 h-1 rounded-full bg-slate-600" />
-                    <span>{t.project || 'Website redesign'}</span>
+                    <span>{t.project || 'General'}</span>
                     {isActive && (
                       <span className="text-blue-400 font-mono">- in progress</span>
                     )}

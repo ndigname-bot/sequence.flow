@@ -23,131 +23,14 @@ import { sound } from './utils/sound';
 import { notifications } from './utils/notifications';
 
 const INITIAL_PROJECTS = [
-  { id: 'website', name: 'Website redesign', count: '08' },
-  { id: 'strategy', name: 'Product strategy', count: '06' },
-  { id: 'personal', name: 'Personal', count: '04' }
+  { id: 'cybersecurity', name: 'Cybersecurity & Study', count: '00' },
+  { id: 'software', name: 'Software & Code', count: '00' },
+  { id: 'personal', name: 'Personal', count: '00' }
 ];
 
-const INITIAL_TASKS = [
-  {
-    id: 't-1',
-    title: 'Explore the new homepage direction',
-    project: 'Website redesign',
-    duration: '30 min',
-    completed: false
-  },
-  {
-    id: 't-2',
-    title: 'Build the core component library',
-    project: 'Website redesign',
-    duration: '45 min',
-    completed: false
-  },
-  {
-    id: 't-3',
-    title: 'Map the onboarding journey',
-    project: 'Product strategy',
-    duration: '25 min',
-    completed: false
-  },
-  {
-    id: 't-4',
-    title: 'Review references & set a direction',
-    project: 'Website redesign',
-    duration: '20 min',
-    completed: true
-  }
-];
+const INITIAL_TASKS = [];
 
-const INITIAL_NOTES = [
-  {
-    id: 'n-1',
-    title: 'Homepage direction',
-    project: 'Website redesign',
-    category: '3 session notes',
-    time: '14:32',
-    date: 'OCT 27, 2026',
-    sessionInfo: '3 notes from a 30 min focus',
-    calloutTitle: 'Explore the new homepage direction',
-    callout: 'The homepage should feel like an invitation to focus, not another tool asking for attention.',
-    points: [
-      {
-        num: '01',
-        title: 'One clear promise',
-        desc: 'Lead with the feeling of making progress. Keep the opening message simple: less switching, more meaningful work.'
-      },
-      {
-        num: '02',
-        title: 'Give the product room',
-        desc: 'Explore a wider, editorial hero. Show one real focus session rather than a collage of features. Let the interface tell the story.'
-      },
-      {
-        num: '03',
-        title: 'Quiet by design',
-        desc: 'Use generous spacing, a restrained blue accent and a single primary action. Motion should guide, never compete.'
-      }
-    ],
-    actionItem: {
-      title: 'Sketch two hero directions',
-      sub: 'Carry into the next design exploration session'
-    }
-  },
-  {
-    id: 'n-2',
-    title: 'A quieter first impression',
-    project: 'Website redesign',
-    category: 'Exploration',
-    time: '11:20',
-    date: 'OCT 27, 2026',
-    sessionInfo: 'Design exploration notes',
-    calloutTitle: 'A quieter first impression',
-    callout: 'Remove visual clutter so the mind can latch onto the single primary task without cognitive overload.'
-  },
-  {
-    id: 'n-3',
-    title: 'First-run friction & opportunities',
-    project: 'Product strategy',
-    category: 'Research',
-    time: '09:45',
-    date: 'OCT 26, 2026',
-    sessionInfo: 'Research synthesis',
-    calloutTitle: 'First-run friction',
-    callout: 'The first 3 minutes of a focus session dictate whether the user stays in the zone or context-switches.'
-  },
-  {
-    id: 'n-4',
-    title: 'Component library principles',
-    project: 'Website redesign',
-    category: 'Decision log',
-    time: 'Yesterday',
-    date: 'OCT 26, 2026',
-    sessionInfo: 'Design architecture',
-    calloutTitle: 'Design tokens & obsidian themes',
-    callout: 'Keep components dark, obsidian-tinted with cyan and electric blue accents.'
-  },
-  {
-    id: 'n-5',
-    title: 'What makes a useful onboarding?',
-    project: 'Product strategy',
-    category: 'Ideas',
-    time: 'Yesterday',
-    date: 'OCT 26, 2026',
-    sessionInfo: 'Product strategy reflections',
-    calloutTitle: 'Frictionless onboarding',
-    callout: 'Do not force a 10-step wizard. Launch straight into a single focused 25-minute sprint.'
-  },
-  {
-    id: 'n-6',
-    title: 'A week with fewer open loops',
-    project: 'Personal',
-    category: 'Reflection',
-    time: 'Oct 25',
-    date: 'OCT 25, 2026',
-    sessionInfo: 'Weekly retrospective',
-    calloutTitle: 'Closing loops',
-    callout: 'Clearing open browser tabs and pending queue items before logging off dramatically reduces morning dread.'
-  }
-];
+const INITIAL_NOTES = [];
 
 export default function App() {
   // App UI Layout State: 'companion' (mini-window) | 'ball' (floating Gemini orb) | 'full' (studio dashboard)
@@ -176,36 +59,36 @@ export default function App() {
     return localStorage.getItem('sequence_workspace_name') || "Nelimo's studio";
   });
 
-  // Projects & Tasks
+  // Projects & Tasks (Clean State)
   const [projects, setProjects] = useState(() => {
-    const saved = localStorage.getItem('sequence_projects_v3');
+    const saved = localStorage.getItem('sequence_projects_v9');
     return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
   });
 
   const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem('sequence_flow_tasks_v5');
+    const saved = localStorage.getItem('sequence_flow_tasks_v9');
     return saved ? JSON.parse(saved) : INITIAL_TASKS;
   });
 
-  // Notes
+  // Notes (Clean State)
   const [vaultNotes, setVaultNotes] = useState(() => {
-    const saved = localStorage.getItem('sequence_vault_notes_v6');
+    const saved = localStorage.getItem('sequence_vault_notes_v9');
     return saved ? JSON.parse(saved) : INITIAL_NOTES;
   });
 
-  // Focus Countdown
-  const [secondsRemaining, setSecondsRemaining] = useState(24 * 60 + 38); // 24:38 matching Figma
+  // Focus Countdown (Standard 25 min sprint)
+  const [secondsRemaining, setSecondsRemaining] = useState(25 * 60);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Stats
+  // Stats (Clean Start)
   const [sessionsCount, setSessionsCount] = useState(() => {
-    const saved = localStorage.getItem('sequence_sessions_count_v5');
-    return saved ? Number(saved) : 2;
+    const saved = localStorage.getItem('sequence_sessions_count_v9');
+    return saved ? Number(saved) : 0;
   });
-  const [streakDays, setStreakDays] = useState(7);
-  const [totalFocusedSeconds, setTotalFocusedSeconds] = useState(135 * 60); // 2h 15m
+  const [streakDays, setStreakDays] = useState(1);
+  const [totalFocusedSeconds, setTotalFocusedSeconds] = useState(0);
 
-  const activeTask = tasks.find(t => !t.completed) || tasks[0];
+  const activeTask = tasks.find(t => !t.completed) || tasks[0] || null;
 
   // Sync state
   useEffect(() => {
@@ -222,15 +105,15 @@ export default function App() {
   }, [appMode]);
 
   useEffect(() => {
-    localStorage.setItem('sequence_flow_tasks_v5', JSON.stringify(tasks));
+    localStorage.setItem('sequence_flow_tasks_v9', JSON.stringify(tasks));
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem('sequence_vault_notes_v6', JSON.stringify(vaultNotes));
+    localStorage.setItem('sequence_vault_notes_v9', JSON.stringify(vaultNotes));
   }, [vaultNotes]);
 
   useEffect(() => {
-    localStorage.setItem('sequence_projects_v3', JSON.stringify(projects));
+    localStorage.setItem('sequence_projects_v9', JSON.stringify(projects));
   }, [projects]);
 
   useEffect(() => {
@@ -692,8 +575,19 @@ export default function App() {
           sound.playComplete();
         }}
         onResetWorkspace={() => {
+          localStorage.removeItem('sequence_flow_tasks_v5');
+          localStorage.removeItem('sequence_flow_tasks_v9');
+          localStorage.removeItem('sequence_vault_notes_v5');
+          localStorage.removeItem('sequence_vault_notes_v6');
+          localStorage.removeItem('sequence_vault_notes_v9');
+          localStorage.removeItem('sequence_projects_v3');
+          localStorage.removeItem('sequence_projects_v9');
+          localStorage.removeItem('sequence_sessions_count_v5');
+          localStorage.removeItem('sequence_sessions_count_v9');
           setTasks([]);
           setVaultNotes([]);
+          setSessionsCount(0);
+          setTotalFocusedSeconds(0);
           setProjects([
             { id: 'cyber', name: 'Cybersecurity & Study', count: '00' },
             { id: 'dev', name: 'Software & Projects', count: '00' },

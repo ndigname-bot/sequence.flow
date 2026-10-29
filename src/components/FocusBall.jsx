@@ -24,7 +24,7 @@ export default function FocusBall({
         <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-[#070C18]/95 border border-cyan-400/40 shadow-glow-cyan backdrop-blur-xl animate-fade-in text-xs font-sans">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
           <span className="font-semibold text-white truncate max-w-[180px]">
-            {activeTask?.title || 'Explore new homepage'}
+            {activeTask?.title || 'Sequence Focus'}
           </span>
           <span className="font-mono text-cyan-300 font-bold border-l border-slate-700 pl-2">
             {timeFormatted}

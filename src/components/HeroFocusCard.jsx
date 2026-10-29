@@ -17,26 +17,55 @@ export default function HeroFocusCard({
   isPaused,
   secondsRemaining,
   totalSeconds = 1800, // 30:00
-  sessionNumber = 2,
+  sessionNumber = 1,
   totalSessions = 4,
   onToggleZen,
-  onUpdateTitle
+  onUpdateTitle,
+  onAddTask
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(task?.title || 'Explore the new homepage direction');
+  const [title, setTitle] = useState(task?.title || '');
+  const [quickTitle, setQuickTitle] = useState('');
 
   useEffect(() => {
     if (task) {
       setTitle(task.title);
+    } else {
+      setTitle('');
     }
   }, [task?.id, task?.title]);
 
   const handleTitleSubmit = (e) => {
     e.preventDefault();
-    if (title.trim() && task) {
-      onUpdateTitle(task.id, title.trim());
+    if (title.trim()) {
+      if (task) {
+        onUpdateTitle(task.id, title.trim());
+      } else if (onAddTask) {
+        onAddTask({
+          id: `task-${Date.now()}`,
+          title: title.trim(),
+          project: 'General',
+          duration: '25 min',
+          completed: false
+        });
+      }
     }
     setIsEditing(false);
+  };
+
+  const handleQuickAdd = (e) => {
+    e.preventDefault();
+    if (!quickTitle.trim()) return;
+    if (onAddTask) {
+      onAddTask({
+        id: `task-${Date.now()}`,
+        title: quickTitle.trim(),
+        project: 'General',
+        duration: '25 min',
+        completed: false
+      });
+      setQuickTitle('');
+    }
   };
 
   // Format MM : SS
@@ -106,15 +135,15 @@ export default function HeroFocusCard({
               className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-snug cursor-text hover:text-blue-100 transition"
               title="Click to edit task title"
             >
-              {task?.title || 'Explore the new homepage direction'}
+              {task?.title || 'No active task — click to add one'}
             </h2>
           )}
 
           <div className="flex items-center gap-2 text-xs text-slate-400 font-sans">
-            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-            <span>Website redesign</span>
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{task?.project || 'Current Focus'}</span>
             <span className="text-slate-600">/</span>
-            <span className="text-slate-300">Design exploration</span>
+            <span className="text-slate-300">{task ? (task.duration || '25 min') : 'Queue is ready'}</span>
           </div>
 
           {/* Action Buttons */}
