@@ -26,12 +26,12 @@ function createWindow() {
 
   mainWindow.setMenuBarVisibility(false);
 
-  // Load from local Vite dev server or production dist
-  const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
-  
-  mainWindow.loadURL(devServerUrl).catch(() => {
+  // Load built production application directly for instant offline startup
+  if (process.env.VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+  } else {
     mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
-  });
+  }
 
   // Global Shortcut to toggle Always-On-Top Mini Companion: Ctrl+Shift+Space
   globalShortcut.register('CommandOrControl+Shift+Space', () => {
