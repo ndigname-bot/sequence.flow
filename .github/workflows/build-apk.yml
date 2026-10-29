@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,14 +30,14 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
 
       - name: Sync Native Android
         run: npx cap sync android
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x android/gradlew
 
       - name: Build Debug APK
         working-directory: ./android
@@ -43,16 +46,21 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sequence-flow-android
+          name: sequence-flow-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.0
-          name: "Sequence Flow v1.0.0 Mobile APK"
-          body: "Initial release of Sequence Flow for Android and Linux Desktop. Download app-debug.apk to install on your Android device."
+          tag_name: v1.0.0-apk
+          name: "Sequence Flow v1.0.0 APK (Android)"
+          body: |
+            ### Sequence Flow for Android 🚀
+            
+            Install this APK on your Android device to run Sequence Flow with native local notification support and background focus tracking.
+            
+            **Download the APK below:**
           files: android/app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
