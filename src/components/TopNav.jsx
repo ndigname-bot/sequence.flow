@@ -17,7 +17,8 @@ export default function TopNav({
   onChangeTab, 
   onOpenNewTask, 
   onOpenQuickFind,
-  onOpenAppearance
+  onOpenAppearance,
+  onLaunchOrb
 }) {
   const tabs = [
     { id: 'projects', label: 'Projects', icon: Folder },
@@ -78,8 +79,20 @@ export default function TopNav({
         })}
       </nav>
 
-      {/* Right Actions: Appearance (Aa/Palette), Quick Find, New Task */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      {/* Right Actions: Floating Orb, Appearance, Quick Find, New Task */}
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Launch Floating Orb Button */}
+        {onLaunchOrb && (
+          <button
+            onClick={onLaunchOrb}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#0C1A38] to-[#0A223D] hover:from-[#11244C] hover:to-[#0F2D52] border border-cyan-500/40 text-xs text-cyan-300 hover:text-white transition cursor-pointer shadow-sm active:scale-95"
+            title="Pop out to floating Focus Ball / Mini-Orb on top of all apps"
+          >
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="hidden sm:inline font-medium">Floating Orb</span>
+          </button>
+        )}
+
         {/* Appearance & Typography Customizer Button */}
         <button
           onClick={onOpenAppearance}

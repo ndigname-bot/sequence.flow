@@ -275,7 +275,14 @@ export default function App() {
 
   // Action: Add Task
   const handleAddTask = (newTask) => {
-    setTasks(prev => [newTask, ...prev]);
+    setTasks(prev => {
+      const updated = [newTask, ...prev];
+      localStorage.setItem('sequence_flow_tasks_v10', JSON.stringify(updated));
+      if (window.electronAPI?.broadcastState) {
+        window.electronAPI.broadcastState('UPDATE_TASKS', { tasks: updated });
+      }
+      return updated;
+    });
     sound.playAdd();
   };
 
@@ -295,15 +302,117 @@ export default function App() {
 
   // Action: Delete Task
   const handleDeleteTask = (taskId) => {
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+    setTasks(prev => {
+      const updated = prev.filter(t => t.id !== taskId);
+      localStorage.setItem('sequence_flow_tasks_v10', JSON.stringify(updated));
+      if (window.electronAPI?.broadcastState) {
+        window.electronAPI.broadcastState('UPDATE_TASKS', { tasks: updated });
+      }
+      return updated;
+    });
     sound.playAdd();
+  };
+
+  // Action: Save Note (from Studio or Floating Work Companion)
+  const handleSaveNote = (newNote) => {
+    setVaultNotes(prev => {
+      const updated = [newNote, ...prev.filter(n => n.id !== newNote.id)];
+      localStorage.setItem('sequence_vault_notes_v10', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (window.electronAPI?.broadcastState) {
+      window.electronAPI.broadcastState('UPDATE_NOTES', { note: newNote });
+    }
+    sound.playComplete();
   };
 
   // Action: Delete Note
   const handleDeleteNote = (noteId) => {
-    setVaultNotes(prev => prev.filter(n => n.id !== noteId));
+    setVaultNotes(prev => {
+      const updated = prev.filter(n => n.id !== noteId);
+      localStorage.setItem('sequence_vault_notes_v10', JSON.stringify(updated));
+      if (window.electronAPI?.broadcastState) {
+        window.electronAPI.broadcastState('UPDATE_NOTES', { allNotes: updated });
+      }
+      return updated;
+    });
     sound.playAdd();
   };
+
+  // Action: Start Project Focus -> Auto-minimizes Studio & Launches Floating Mini-Orb
+  const handleStartProjectFocus = (taskToFocus) => {
+    if (!taskToFocus) return;
+
+    const updatedTasks = [taskToFocus, ...tasks.filter(t => t.id !== taskToFocus.id)];
+    setTasks(updatedTasks);
+    setSecondsRemaining(30 * 60);
+    setIsPaused(false);
+
+    localStorage.setItem('sequence_flow_tasks_v10', JSON.stringify(updatedTasks));
+    sound.playAdd();
+
+    if (window.electronAPI) {
+      // 1. Broadcast active session to floating companion/orb
+      window.electronAPI.broadcastState('SYNC_SESSION', {
+        tasks: updatedTasks,
+        activeTask: taskToFocus,
+        secondsRemaining: 30 * 60,
+        isPaused: false
+      });
+
+      // 2. Automatically minimize Studio to floating mini Focus Ball / Orb above all other apps!
+      if (window.electronAPI.minimizeToBall) {
+        window.electronAPI.minimizeToBall();
+      }
+    } else {
+      setAppMode('ball');
+    }
+  };
+
+  // Live Cross-Window Synchronization (Studio <-> Floating Orb / Companion)
+  useEffect(() => {
+    const syncFromStorage = () => {
+      try {
+        const savedNotes = localStorage.getItem('sequence_vault_notes_v10');
+        if (savedNotes) setVaultNotes(JSON.parse(savedNotes));
+
+        const savedTasks = localStorage.getItem('sequence_flow_tasks_v10');
+        if (savedTasks) setTasks(JSON.parse(savedTasks));
+
+        const savedProjects = localStorage.getItem('sequence_projects_v10');
+        if (savedProjects) setProjects(JSON.parse(savedProjects));
+      } catch (err) {
+        console.error('Cross-window sync error:', err);
+      }
+    };
+
+    window.addEventListener('storage', syncFromStorage);
+    window.addEventListener('focus', syncFromStorage);
+
+    if (window.electronAPI?.onStateUpdated) {
+      window.electronAPI.onStateUpdated(({ type, payload }) => {
+        if (type === 'SYNC_SESSION') {
+          if (payload.tasks) setTasks(payload.tasks);
+          if (payload.secondsRemaining !== undefined) setSecondsRemaining(payload.secondsRemaining);
+          if (payload.isPaused !== undefined) setIsPaused(payload.isPaused);
+        } else if (type === 'UPDATE_NOTES') {
+          if (payload.allNotes) {
+            setVaultNotes(payload.allNotes);
+          } else if (payload.note) {
+            setVaultNotes(prev => [payload.note, ...prev.filter(n => n.id !== payload.note.id)]);
+          }
+        } else if (type === 'UPDATE_TASKS') {
+          if (payload.tasks) setTasks(payload.tasks);
+        }
+      });
+    }
+
+    return () => {
+      window.removeEventListener('storage', syncFromStorage);
+      window.removeEventListener('focus', syncFromStorage);
+    };
+  }, []);
 
   // Action: Clear All Projects, Tasks, and Notes (100% Clean Slate)
   const handleClearAllData = () => {
@@ -364,12 +473,9 @@ export default function App() {
             onPauseToggle={() => setIsPaused(!isPaused)}
             isPaused={isPaused}
             secondsRemaining={secondsRemaining}
-            onSaveNote={(note) => {
-              setVaultNotes(prev => [note, ...prev]);
-              sound.playComplete();
-            }}
+            onSaveNote={handleSaveNote}
             vaultNotes={vaultNotes}
-            onDeleteNote={(id) => setVaultNotes(prev => prev.filter(n => n.id !== id))}
+            onDeleteNote={handleDeleteNote}
             onSendNoteToQueue={(content) => {
               handleAddTask({
                 id: `task-${Date.now()}`,
@@ -423,6 +529,13 @@ export default function App() {
             onOpenNewTask={() => setShowNewTaskModal(true)}
             onOpenQuickFind={() => setShowQuickCapture(true)}
             onOpenAppearance={() => setShowAppearanceModal(true)}
+            onLaunchOrb={() => {
+              if (window.electronAPI?.minimizeToBall) {
+                window.electronAPI.minimizeToBall();
+              } else {
+                setAppMode('ball');
+              }
+            }}
           />
 
           {/* Main Content Viewport with Fluid View-Switching Animation */}
@@ -441,10 +554,7 @@ export default function App() {
                   onDeleteNote={handleDeleteNote}
                   onClearAll={handleClearAllData}
                   onRestoreDemoData={handleRestoreDemoData}
-                  onSelectTaskToFocus={(t) => {
-                    setTasks(prev => [t, ...prev.filter(item => item.id !== t.id)]);
-                    setCurrentTab('focus');
-                  }}
+                  onSelectTaskToFocus={handleStartProjectFocus}
                   onOpenNote={(note) => {
                     setCurrentTab('notes');
                   }}
@@ -460,7 +570,7 @@ export default function App() {
                 <NotesDashboardView 
                   notes={vaultNotes}
                   projects={projects}
-                  onAddNote={(newNote) => setVaultNotes(prev => [newNote, ...prev])}
+                  onAddNote={handleSaveNote}
                   onDeleteNote={handleDeleteNote}
                   onSendNoteToQueue={(content) => {
                     handleAddTask({
@@ -483,9 +593,16 @@ export default function App() {
                   onPauseToggle={() => setIsPaused(!isPaused)}
                   onEndSession={() => handleCompleteTask(activeTask?.id)}
                   onOpenSettings={() => setShowShortcuts(true)}
-                  onCaptureNote={(note) => setVaultNotes(prev => [note, ...prev])}
+                  onCaptureNote={handleSaveNote}
                   linkedNote={linkedNote}
                   onOpenNote={() => setCurrentTab('notes')}
+                  onMinimizeToOrb={() => {
+                    if (window.electronAPI?.minimizeToBall) {
+                      window.electronAPI.minimizeToBall();
+                    } else {
+                      setAppMode('ball');
+                    }
+                  }}
                 />
               )}
 

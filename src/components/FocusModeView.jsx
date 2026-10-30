@@ -77,7 +77,8 @@ export default function FocusModeView({
   onOpenSettings,
   onCaptureNote,
   linkedNote,
-  onOpenNote
+  onOpenNote,
+  onMinimizeToOrb
 }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -365,6 +366,19 @@ export default function FocusModeView({
                 <span>End session</span>
               </button>
             </div>
+
+            {/* Pop out to Floating Mini-Orb */}
+            {onMinimizeToOrb && (
+              <button
+                onClick={onMinimizeToOrb}
+                className="w-full max-w-xs flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-gradient-to-r from-[#0C1A38] to-[#0A223D] hover:from-[#11244C] hover:to-[#0F2D52] border border-cyan-500/40 text-cyan-300 hover:text-white font-semibold text-xs shadow-sm transition cursor-pointer active:scale-98"
+                title="Minimize Studio and work in floating mini-orb on top of all apps"
+              >
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                <span>Pop out to Floating Mini-Orb</span>
+                <ExternalLink className="w-3 h-3 ml-0.5" />
+              </button>
+            )}
 
             <div className="flex items-center gap-2 text-xs text-slate-400 mt-4">
               <Coffee className="w-3.5 h-3.5 text-amber-400" />

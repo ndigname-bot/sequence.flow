@@ -421,6 +421,13 @@ export default function WorkCompanion({
               /* Quick Capture Box (Deep Violet) */
               <form onSubmit={handleNoteSubmit} className="space-y-2">
                 <div className="relative rounded-2xl bg-gradient-to-br from-[#170E2D] to-[#0D071C] border border-violet-500/30 p-3 shadow-inner">
+                  <div className="flex items-center justify-between text-[10px] font-mono text-violet-300/80 mb-2 px-0.5">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                      <span>Filing under: <strong className="text-white">{task?.project || 'General'}</strong></span>
+                    </span>
+                    <span className="text-emerald-400 font-bold">● Studio Sync</span>
+                  </div>
                   <textarea
                     value={quickNoteInput}
                     onChange={(e) => setQuickNoteInput(e.target.value)}

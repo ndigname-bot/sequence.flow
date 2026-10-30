@@ -373,26 +373,23 @@ export default function ProjectManagerView({
                   {/* Bottom Action Bar */}
                   <div className="pt-3 border-t border-white/10 space-y-2 relative z-10" onClick={(e) => e.stopPropagation()}>
                     {/* Start Focus Button */}
-                    {projTasks.length > 0 ? (
-                      <button
-                        onClick={() => {
-                          const firstActive = projTasks.find(t => !t.completed) || projTasks[0];
-                          onSelectTaskToFocus(firstActive);
-                        }}
-                        className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r ${theme.pillBg} hover:brightness-110 text-white font-bold text-xs shadow-md transition cursor-pointer active:scale-98`}
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>Start project focus</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setSelectedProjectForModal(proj)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add tasks</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        const firstActive = projTasks.find(t => !t.completed) || projTasks[0] || {
+                          id: `task-${Date.now()}`,
+                          title: `Focus session: ${proj.name}`,
+                          project: proj.name,
+                          duration: '30 min',
+                          completed: false
+                        };
+                        if (projTasks.length === 0) onAddTask(firstActive);
+                        onSelectTaskToFocus(firstActive);
+                      }}
+                      className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r ${theme.pillBg} hover:brightness-110 text-white font-bold text-xs shadow-md transition cursor-pointer active:scale-98`}
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Start project focus</span>
+                    </button>
 
                     {/* Open Inspector Link */}
                     <button
@@ -451,20 +448,25 @@ export default function ProjectManagerView({
                   </div>
 
                   {/* Start Focus on this Project Button */}
-                  {projTasks.length > 0 && (
-                    <div className="pt-3">
-                      <button
-                        onClick={() => {
-                          const firstActive = projTasks.find(t => !t.completed) || projTasks[0];
-                          onSelectTaskToFocus(firstActive);
-                        }}
-                        className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer active:scale-98"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>Start project focus</span>
-                      </button>
-                    </div>
-                  )}
+                  <div className="pt-3">
+                    <button
+                      onClick={() => {
+                        const firstActive = projTasks.find(t => !t.completed) || projTasks[0] || {
+                          id: `task-${Date.now()}`,
+                          title: `Focus session: ${proj.name}`,
+                          project: proj.name,
+                          duration: '30 min',
+                          completed: false
+                        };
+                        if (projTasks.length === 0) onAddTask(firstActive);
+                        onSelectTaskToFocus(firstActive);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition cursor-pointer active:scale-98"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Start project focus</span>
+                    </button>
+                  </div>
 
                   {/* TASKS SECTION */}
                   <div className="mt-4 space-y-2">
@@ -744,14 +746,19 @@ export default function ProjectManagerView({
                   </div>
 
                   <button
-                    disabled={!firstActive}
                     onClick={() => {
-                      if (firstActive) {
-                        onSelectTaskToFocus(firstActive);
-                        setSelectedProjectForModal(null);
-                      }
+                      const taskToFocus = firstActive || {
+                        id: `task-${Date.now()}`,
+                        title: `Focus session: ${selectedProjectForModal.name}`,
+                        project: selectedProjectForModal.name,
+                        duration: '30 min',
+                        completed: false
+                      };
+                      if (!firstActive) onAddTask(taskToFocus);
+                      onSelectTaskToFocus(taskToFocus);
+                      setSelectedProjectForModal(null);
                     }}
-                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 disabled:opacity-40 text-white font-bold text-xs shadow-lg transition cursor-pointer shrink-0"
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs shadow-lg transition cursor-pointer shrink-0"
                   >
                     <Play className="w-4 h-4 fill-current" />
                     <span>Start project focus</span>
