@@ -203,9 +203,21 @@ export default function NotesDashboardView({
                       <span className={`font-bold truncate ${isActive ? 'text-white' : 'text-slate-200'}`}>
                         {note.title}
                       </span>
-                      <span className="text-[10px] font-mono text-slate-500 shrink-0">
-                        {note.date || 'Today'}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] font-mono text-slate-500">
+                          {note.date || 'Today'}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteNote(note.id);
+                          }}
+                          className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer"
+                          title="Delete note"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
 
                     <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
@@ -359,7 +371,19 @@ export default function NotesDashboardView({
                   <span className="text-[10px] font-mono text-cyan-400 uppercase font-semibold">
                     {note.project || 'General'}
                   </span>
-                  <span className="text-[10px] font-mono text-slate-500">{note.date || 'Today'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono text-slate-500">{note.date || 'Today'}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteNote(note.id);
+                      }}
+                      className="p-1 rounded text-slate-500 hover:text-rose-400 transition cursor-pointer"
+                      title="Delete note"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
                 <h3 className="text-base font-bold text-white tracking-tight">{note.title}</h3>
                 <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{note.content}</p>

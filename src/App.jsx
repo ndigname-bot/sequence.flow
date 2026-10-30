@@ -285,6 +285,40 @@ export default function App() {
     sound.playAdd();
   };
 
+  // Action: Delete Project
+  const handleDeleteProject = (projectId) => {
+    setProjects(prev => prev.filter(p => p.id !== projectId && p.name !== projectId));
+    setTasks(prev => prev.filter(t => t.project !== projectId));
+    setVaultNotes(prev => prev.filter(n => n.project !== projectId));
+    sound.playAdd();
+  };
+
+  // Action: Delete Task
+  const handleDeleteTask = (taskId) => {
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    sound.playAdd();
+  };
+
+  // Action: Delete Note
+  const handleDeleteNote = (noteId) => {
+    setVaultNotes(prev => prev.filter(n => n.id !== noteId));
+    sound.playAdd();
+  };
+
+  // Action: Clear All Projects, Tasks, and Notes (100% Clean Slate)
+  const handleClearAllData = () => {
+    setProjects([]);
+    setTasks([]);
+    setVaultNotes([]);
+    setSessionsCount(0);
+    setTotalFocusedSeconds(0);
+    localStorage.removeItem('sequence_projects_v10');
+    localStorage.removeItem('sequence_flow_tasks_v10');
+    localStorage.removeItem('sequence_vault_notes_v10');
+    localStorage.removeItem('sequence_sessions_count_v10');
+    sound.playComplete();
+  };
+
   return (
     <div className={`w-full min-h-screen selection:bg-cyan-500/30 overflow-x-hidden relative ${
       appMode === 'full' ? 'bg-[#04070F] text-slate-100' : 'bg-transparent text-slate-100'
@@ -384,6 +418,10 @@ export default function App() {
                 notes={vaultNotes}
                 onAddTask={handleAddTask}
                 onAddProject={handleAddProject}
+                onDeleteProject={handleDeleteProject}
+                onDeleteTask={handleDeleteTask}
+                onDeleteNote={handleDeleteNote}
+                onClearAll={handleClearAllData}
                 onSelectTaskToFocus={(t) => {
                   setTasks(prev => [t, ...prev.filter(item => item.id !== t.id)]);
                   setCurrentTab('focus');
@@ -404,7 +442,7 @@ export default function App() {
                 notes={vaultNotes}
                 projects={projects}
                 onAddNote={(newNote) => setVaultNotes(prev => [newNote, ...prev])}
-                onDeleteNote={(id) => setVaultNotes(prev => prev.filter(n => n.id !== id))}
+                onDeleteNote={handleDeleteNote}
                 onSendNoteToQueue={(content) => {
                   handleAddTask({
                     id: `task-${Date.now()}`,
