@@ -312,11 +312,21 @@ export default function App() {
     setVaultNotes([]);
     setSessionsCount(0);
     setTotalFocusedSeconds(0);
-    localStorage.removeItem('sequence_projects_v10');
-    localStorage.removeItem('sequence_flow_tasks_v10');
-    localStorage.removeItem('sequence_vault_notes_v10');
-    localStorage.removeItem('sequence_sessions_count_v10');
+    localStorage.setItem('sequence_projects_v10', '[]');
+    localStorage.setItem('sequence_flow_tasks_v10', '[]');
+    localStorage.setItem('sequence_vault_notes_v10', '[]');
+    localStorage.setItem('sequence_sessions_count_v10', '0');
     sound.playComplete();
+  };
+
+  // Action: Restore Default Demo Data
+  const handleRestoreDemoData = () => {
+    setProjects(INITIAL_PROJECTS);
+    setTasks(INITIAL_TASKS);
+    setVaultNotes(INITIAL_NOTES);
+    setSessionsCount(25);
+    setTotalFocusedSeconds(45000);
+    sound.playAdd();
   };
 
   return (
@@ -422,6 +432,7 @@ export default function App() {
                 onDeleteTask={handleDeleteTask}
                 onDeleteNote={handleDeleteNote}
                 onClearAll={handleClearAllData}
+                onRestoreDemoData={handleRestoreDemoData}
                 onSelectTaskToFocus={(t) => {
                   setTasks(prev => [t, ...prev.filter(item => item.id !== t.id)]);
                   setCurrentTab('focus');

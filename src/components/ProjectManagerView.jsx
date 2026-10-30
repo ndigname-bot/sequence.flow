@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Folder, 
   CheckSquare, 
@@ -9,11 +9,19 @@ import {
   List, 
   Calendar, 
   Play, 
-  Check,
-  ExternalLink,
-  Clock,
-  RotateCcw,
-  AlertCircle
+  Check, 
+  ExternalLink, 
+  Clock, 
+  RotateCcw, 
+  AlertCircle,
+  BookOpen,
+  Bookmark,
+  Smile,
+  Sparkles,
+  ChevronRight,
+  X,
+  Layers,
+  ArrowUpRight
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 
@@ -27,19 +35,34 @@ export default function ProjectManagerView({
   onDeleteTask,
   onDeleteNote,
   onClearAll,
+  onRestoreDemoData,
   onSelectTaskToFocus,
   onOpenNote,
   onToggleComplete
 }) {
-  // Layout choice: 'board' (Kanban columns) vs 'list' (Sequential queue)
-  const [layoutMode, setLayoutMode] = useState('board');
+  // Layout choice: 'shelf' (ReadEra book covers) vs 'board' (Kanban columns) vs 'list' (Sequential queue)
+  const [layoutMode, setLayoutMode] = useState(() => {
+    return localStorage.getItem('sequence_project_layout_v2') || 'shelf';
+  });
+
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectCategory, setNewProjectCategory] = useState('Study & Reading');
+  
+  // Selected Project for "Open It Myself" Workspace Modal (ReadEra Reader format)
+  const [selectedProjectForModal, setSelectedProjectForModal] = useState(null);
+
+  // In-card task/note creation
   const [addingTaskForProject, setAddingTaskForProject] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [addingNoteForProject, setAddingNoteForProject] = useState(null);
   const [newNoteTitle, setNewNoteTitle] = useState('');
+
+  // Persist layout choice
+  useEffect(() => {
+    localStorage.setItem('sequence_project_layout_v2', layoutMode);
+  }, [layoutMode]);
 
   const today = new Date();
   const dateFormatted = today.toLocaleDateString('en-US', {
@@ -62,17 +85,87 @@ export default function ProjectManagerView({
     sound.playAdd();
   };
 
+  const handleCreateNote = (projectId) => {
+    if (!newNoteTitle.trim()) return;
+    if (onOpenNote) {
+      sound.playAdd();
+    }
+    setNewNoteTitle('');
+    setAddingNoteForProject(null);
+  };
+
   const handleCreateProject = (e) => {
     e.preventDefault();
     if (!newProjectName.trim()) return;
     onAddProject({
       id: newProjectName.toLowerCase().replace(/\s+/g, '-'),
       name: newProjectName.trim(),
+      category: newProjectCategory || 'Study & Focus',
       count: '00'
     });
     setNewProjectName('');
     setShowNewProjectModal(false);
     sound.playAdd();
+  };
+
+  // Get project cover theme colors & icon
+  const getProjectCoverTheme = (index, name = '') => {
+    const lower = name.toLowerCase();
+    if (lower.includes('money') || lower.includes('finance') || lower.includes('reading')) {
+      return {
+        bg: 'bg-gradient-to-br from-[#0c2229] via-[#07161b] to-[#040d11]',
+        border: 'border-emerald-500/40 hover:border-emerald-400',
+        spine: 'border-l-emerald-500',
+        badgeBg: 'bg-emerald-950/80 text-emerald-300 border-emerald-800/60',
+        glow: 'shadow-emerald-950/40',
+        accentText: 'text-emerald-400',
+        pillBg: 'from-emerald-600 to-teal-500'
+      };
+    }
+    if (lower.includes('website') || lower.includes('design') || lower.includes('frontend')) {
+      return {
+        bg: 'bg-gradient-to-br from-[#0b1b36] via-[#071022] to-[#040813]',
+        border: 'border-blue-500/40 hover:border-cyan-400',
+        spine: 'border-l-cyan-400',
+        badgeBg: 'bg-blue-950/80 text-cyan-300 border-cyan-800/60',
+        glow: 'shadow-blue-950/40',
+        accentText: 'text-cyan-400',
+        pillBg: 'from-blue-600 to-cyan-500'
+      };
+    }
+    if (lower.includes('product') || lower.includes('strategy') || lower.includes('system')) {
+      return {
+        bg: 'bg-gradient-to-br from-[#1c1236] via-[#110a22] to-[#090513]',
+        border: 'border-violet-500/40 hover:border-violet-400',
+        spine: 'border-l-violet-400',
+        badgeBg: 'bg-violet-950/80 text-violet-300 border-violet-800/60',
+        glow: 'shadow-violet-950/40',
+        accentText: 'text-violet-400',
+        pillBg: 'from-violet-600 to-purple-500'
+      };
+    }
+    // Default palette
+    const palettes = [
+      {
+        bg: 'bg-gradient-to-br from-[#1b1c2b] via-[#0f101c] to-[#07080f]',
+        border: 'border-amber-500/40 hover:border-amber-400',
+        spine: 'border-l-amber-400',
+        badgeBg: 'bg-amber-950/80 text-amber-300 border-amber-800/60',
+        glow: 'shadow-amber-950/40',
+        accentText: 'text-amber-400',
+        pillBg: 'from-amber-600 to-orange-500'
+      },
+      {
+        bg: 'bg-gradient-to-br from-[#0e2133] via-[#091522] to-[#050b13]',
+        border: 'border-cyan-500/40 hover:border-cyan-400',
+        spine: 'border-l-cyan-400',
+        badgeBg: 'bg-cyan-950/80 text-cyan-300 border-cyan-800/60',
+        glow: 'shadow-cyan-950/40',
+        accentText: 'text-cyan-400',
+        pillBg: 'from-cyan-600 to-blue-500'
+      }
+    ];
+    return palettes[index % palettes.length];
   };
 
   return (
@@ -86,10 +179,22 @@ export default function ProjectManagerView({
           </p>
         </div>
 
-        {/* Action Controls: Board/List Toggle, New Project & Clear All */}
+        {/* Action Controls: Shelf / Board / List Toggle, New Project & Clear All */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* View Switcher */}
+          {/* View Switcher: Shelf (ReadEra) | Board (Kanban) | List (Sequential) */}
           <div className="flex items-center bg-[#070B16] p-1 rounded-xl border border-slate-800 text-xs">
+            <button
+              onClick={() => setLayoutMode('shelf')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                layoutMode === 'shelf'
+                  ? 'bg-blue-600 text-white font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="ReadEra Shelf View (Book Covers & Minimalist Cards)"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Shelf</span>
+            </button>
             <button
               onClick={() => setLayoutMode('board')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${
@@ -97,7 +202,7 @@ export default function ProjectManagerView({
                   ? 'bg-blue-600 text-white font-bold shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
-              title="Board View (Columns)"
+              title="Board View (Kanban Columns)"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
               <span>Board</span>
@@ -109,14 +214,14 @@ export default function ProjectManagerView({
                   ? 'bg-blue-600 text-white font-bold shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
-              title="List View (Sequential)"
+              title="List View (Sequential Queue)"
             >
               <List className="w-3.5 h-3.5" />
               <span>List</span>
             </button>
           </div>
 
-          {/* Clear All / Fresh Start Button */}
+          {/* Clear All Button */}
           <button
             onClick={() => setShowClearConfirmModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 text-xs font-medium transition cursor-pointer"
@@ -137,33 +242,176 @@ export default function ProjectManagerView({
         </div>
       </div>
 
-      {/* Zero State if All Projects Cleared */}
+      {/* ======================================================== */}
+      {/* ZERO STATE (IF USER CLEARED ALL DATA)                     */}
+      {/* ======================================================== */}
       {projects.length === 0 && (
-        <div className="py-20 rounded-3xl bg-[#070B16] border border-dashed border-slate-800 text-center space-y-4 max-w-xl mx-auto">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600/10 text-cyan-400 border border-blue-500/20 flex items-center justify-center mx-auto">
-            <Folder className="w-6 h-6" />
+        <div className="py-20 rounded-3xl bg-[#070B16] border border-dashed border-slate-800 text-center space-y-4 max-w-xl mx-auto animate-fade-in">
+          <div className="w-14 h-14 rounded-2xl bg-blue-600/10 text-cyan-400 border border-blue-500/20 flex items-center justify-center mx-auto">
+            <BookOpen className="w-7 h-7" />
           </div>
           <div>
             <h3 className="text-base font-bold text-white">Your workspace is clean and ready</h3>
             <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto leading-relaxed">
-              All dummy data has been cleared. Create your first project to start planning your tasks and notes.
+              All demo projects, tasks, and notes have been cleared. You now have a quiet, 100% clean space to build your own system.
             </p>
           </div>
-          <button
-            onClick={() => setShowNewProjectModal(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition cursor-pointer shadow-md"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create your first project</span>
-          </button>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => setShowNewProjectModal(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition cursor-pointer shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create your first project</span>
+            </button>
+            {onRestoreDemoData && (
+              <button
+                onClick={onRestoreDemoData}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-medium border border-slate-800 transition cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Restore sample projects</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
 
       {/* ======================================================== */}
-      {/* VIEW A: BOARD / COLUMNS VIEW (FIGMA IMAGE 3)             */}
+      {/* VIEW A: READERA SHELF / COVERS VIEW (FIGMA + READERA)    */}
+      {/* ======================================================== */}
+      {layoutMode === 'shelf' && projects.length > 0 && (
+        <div className="space-y-4 animate-fade-in">
+          {/* ReadEra-Style Header Bar Above Shelf */}
+          <div className="flex items-center justify-between px-5 py-3.5 rounded-2xl bg-gradient-to-r from-[#003844] via-[#04242c] to-[#061922] border border-cyan-500/30 shadow-lg text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-cyan-400/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shadow-sm">
+                <Smile className="w-5 h-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm sm:text-base font-extrabold tracking-tight text-white">
+                    Reading & Projects Now
+                  </h2>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-400/30 text-cyan-300 font-bold">
+                    {projects.length} on shelf
+                  </span>
+                </div>
+                <p className="text-[11px] text-cyan-200/70 hidden sm:block">
+                  Click any project cover to open workspace, or hit ▶ to start a focus session immediately.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-cyan-300/80 hidden md:inline">
+                ReadEra Grid Mode
+              </span>
+            </div>
+          </div>
+
+          {/* Book / Project Cards Shelf Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
+            {projects.map((proj, idx) => {
+              const projTasks = tasks.filter(t => t.project === proj.id || t.project === proj.name);
+              const projNotes = notes.filter(n => n.project === proj.id || n.project === proj.name);
+              const completedTasks = projTasks.filter(t => t.completed).length;
+              const percent = projTasks.length > 0 ? Math.round((completedTasks / projTasks.length) * 100) : 0;
+              const theme = getProjectCoverTheme(idx, proj.name);
+
+              return (
+                <div 
+                  key={proj.id}
+                  onClick={() => setSelectedProjectForModal(proj)}
+                  className={`group relative rounded-3xl ${theme.bg} border-2 ${theme.border} border-l-8 ${theme.spine} shadow-2xl ${theme.glow} p-5 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-cyan-900/30 cursor-pointer min-h-[350px] overflow-hidden`}
+                >
+                  {/* Subtle Spine Texture Overlay */}
+                  <div className="absolute top-0 bottom-0 left-0 w-2.5 bg-black/30 border-r border-white/5 pointer-events-none" />
+
+                  {/* Top Cover Bar: Category Badge & Delete Button */}
+                  <div className="flex items-center justify-between relative z-10">
+                    <span className={`text-[10px] font-mono uppercase tracking-widest font-extrabold px-2.5 py-1 rounded-lg border ${theme.badgeBg}`}>
+                      {proj.category || 'PROJECT'}
+                    </span>
+
+                    {onDeleteProject && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteProject(proj.id);
+                        }}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-900/80 transition cursor-pointer opacity-40 group-hover:opacity-100"
+                        title="Delete this project"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Center Cover Graphic & Typography */}
+                  <div className="my-auto py-6 space-y-3 relative z-10 text-center">
+                    {/* Visual Emblem / Circle Progress */}
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center shadow-inner group-hover:scale-105 transition">
+                      <span className={`text-xl font-extrabold font-mono ${theme.accentText}`}>
+                        {percent > 0 ? `${percent}%` : (proj.count || '01')}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-extrabold text-white tracking-tight leading-snug group-hover:text-cyan-200 transition">
+                        {proj.name}
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {projTasks.length} active tasks • {projNotes.length} captured notes
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bottom Action Bar */}
+                  <div className="pt-3 border-t border-white/10 space-y-2 relative z-10" onClick={(e) => e.stopPropagation()}>
+                    {/* Start Focus Button */}
+                    {projTasks.length > 0 ? (
+                      <button
+                        onClick={() => {
+                          const firstActive = projTasks.find(t => !t.completed) || projTasks[0];
+                          onSelectTaskToFocus(firstActive);
+                        }}
+                        className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gradient-to-r ${theme.pillBg} hover:brightness-110 text-white font-bold text-xs shadow-md transition cursor-pointer active:scale-98`}
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Start project focus</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setSelectedProjectForModal(proj)}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add tasks</span>
+                      </button>
+                    )}
+
+                    {/* Open Inspector Link */}
+                    <button
+                      onClick={() => setSelectedProjectForModal(proj)}
+                      className="w-full flex items-center justify-center gap-1 py-1 text-[11px] font-mono text-slate-400 hover:text-white transition cursor-pointer"
+                    >
+                      <span>Open workspace</span>
+                      <ArrowUpRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* VIEW B: BOARD / COLUMNS VIEW (FIGMA KANBAN FORMAT)       */}
       {/* ======================================================== */}
       {layoutMode === 'board' && projects.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-fade-in">
           {projects.map((proj) => {
             const projTasks = tasks.filter(t => t.project === proj.id || t.project === proj.name);
             const projNotes = notes.filter(n => n.project === proj.id || n.project === proj.name);
@@ -374,10 +622,10 @@ export default function ProjectManagerView({
       )}
 
       {/* ======================================================== */}
-      {/* VIEW B: LINEAR / LIST QUEUE VIEW                         */}
+      {/* VIEW C: LINEAR / LIST QUEUE VIEW (FIGMA LIST FORMAT)     */}
       {/* ======================================================== */}
       {layoutMode === 'list' && (
-        <div className="rounded-3xl bg-[#070B16] border border-slate-800/90 shadow-xl p-6 space-y-4">
+        <div className="rounded-3xl bg-[#070B16] border border-slate-800/90 shadow-xl p-6 space-y-4 animate-fade-in">
           <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-slate-400 font-bold">
             <span>ALL SEQUENCE TASKS ({tasks.length})</span>
           </div>
@@ -450,22 +698,265 @@ export default function ProjectManagerView({
         <span className="text-cyan-400 font-bold">Sequence workspace active</span>
       </div>
 
-      {/* New Project Modal */}
+      {/* ======================================================== */}
+      {/* PROJECT WORKSPACE MODAL ("OPEN IT MYSELF AND START")     */}
+      {/* ======================================================== */}
+      {selectedProjectForModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#090D1A] border border-cyan-500/40 p-6 sm:p-8 space-y-6 shadow-2xl">
+            {/* Modal Top Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-950/80 border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-mono font-bold text-lg">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-bold">
+                    {selectedProjectForModal.category || 'PROJECT WORKSPACE'}
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+                    {selectedProjectForModal.name}
+                  </h2>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedProjectForModal(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Action: Start Project Focus */}
+            {(() => {
+              const projTasks = tasks.filter(t => t.project === selectedProjectForModal.id || t.project === selectedProjectForModal.name);
+              const firstActive = projTasks.find(t => !t.completed) || projTasks[0];
+
+              return (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/50 to-cyan-950/30 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-bold text-white block">Ready to dive in?</span>
+                    <span className="text-xs text-slate-400">Launch a 30-minute focus session on this project.</span>
+                  </div>
+
+                  <button
+                    disabled={!firstActive}
+                    onClick={() => {
+                      if (firstActive) {
+                        onSelectTaskToFocus(firstActive);
+                        setSelectedProjectForModal(null);
+                      }
+                    }}
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 disabled:opacity-40 text-white font-bold text-xs shadow-lg transition cursor-pointer shrink-0"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Start project focus</span>
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Tasks in this Project */}
+            {(() => {
+              const projTasks = tasks.filter(t => t.project === selectedProjectForModal.id || t.project === selectedProjectForModal.name);
+
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs font-mono uppercase text-slate-400 font-bold">
+                    <span>TASKS ({projTasks.length})</span>
+                    <button
+                      onClick={() => setAddingTaskForProject(selectedProjectForModal.id)}
+                      className="text-cyan-400 hover:text-cyan-300 font-bold text-xs cursor-pointer"
+                    >
+                      + Add Task
+                    </button>
+                  </div>
+
+                  {/* Add Task Input inside modal */}
+                  {addingTaskForProject === selectedProjectForModal.id && (
+                    <div className="p-3 rounded-2xl bg-[#050810] border border-blue-500/50 space-y-2 animate-fade-in">
+                      <input 
+                        type="text"
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        placeholder="Task title..."
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleCreateTask(selectedProjectForModal.id);
+                          if (e.key === 'Escape') setAddingTaskForProject(null);
+                        }}
+                        className="w-full bg-transparent text-sm text-white placeholder-slate-500 outline-none"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => setAddingTaskForProject(null)}
+                          className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleCreateTask(selectedProjectForModal.id)}
+                          className="px-4 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold"
+                        >
+                          Add Task
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {projTasks.length === 0 && addingTaskForProject !== selectedProjectForModal.id && (
+                    <p className="text-xs text-slate-500 italic py-3 text-center">No tasks in this project yet.</p>
+                  )}
+
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {projTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex items-center justify-between p-3 rounded-2xl bg-[#050810] border border-slate-800/80 hover:border-slate-700 transition"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <button
+                            onClick={() => onToggleComplete(task.id)}
+                            className={`w-4 h-4 rounded-md border flex items-center justify-center transition cursor-pointer shrink-0 ${
+                              task.completed ? 'bg-blue-600 border-blue-500 text-white' : 'border-slate-700 hover:border-cyan-400'
+                            }`}
+                          >
+                            {task.completed && <Check className="w-3 h-3 stroke-[3]" />}
+                          </button>
+                          <span className={`text-xs font-semibold truncate ${task.completed ? 'line-through text-slate-500' : 'text-white'}`}>
+                            {task.title}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {!task.completed && (
+                            <button
+                              onClick={() => {
+                                onSelectTaskToFocus(task);
+                                setSelectedProjectForModal(null);
+                              }}
+                              className="p-1.5 rounded-lg bg-blue-600/30 text-cyan-300 hover:bg-blue-600 hover:text-white transition cursor-pointer"
+                              title="Start Focus on this task"
+                            >
+                              <Play className="w-3 h-3 fill-current" />
+                            </button>
+                          )}
+                          {onDeleteTask && (
+                            <button
+                              onClick={() => onDeleteTask(task.id)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 transition cursor-pointer"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Notes in this Project */}
+            {(() => {
+              const projNotes = notes.filter(n => n.project === selectedProjectForModal.id || n.project === selectedProjectForModal.name);
+
+              return (
+                <div className="space-y-3 pt-2 border-t border-slate-800">
+                  <div className="flex items-center justify-between text-xs font-mono uppercase text-slate-400 font-bold">
+                    <span>NOTES ({projNotes.length})</span>
+                  </div>
+
+                  {projNotes.length === 0 && (
+                    <p className="text-xs text-slate-500 italic py-2 text-center">No notes captured for this project yet.</p>
+                  )}
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {projNotes.map((note) => (
+                      <div
+                        key={note.id}
+                        onClick={() => {
+                          onOpenNote(note);
+                          setSelectedProjectForModal(null);
+                        }}
+                        className="p-3 rounded-2xl bg-[#050810] border border-slate-800/80 hover:border-violet-500/40 hover:bg-[#080E1C] transition cursor-pointer space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-white truncate">{note.title}</span>
+                          <span className="text-[10px] font-mono text-slate-500">{note.date || 'Today'}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 line-clamp-2">{note.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Modal Bottom Actions */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-800 text-xs">
+              {onDeleteProject && (
+                <button
+                  onClick={() => {
+                    onDeleteProject(selectedProjectForModal.id);
+                    setSelectedProjectForModal(null);
+                  }}
+                  className="flex items-center gap-1.5 text-rose-400 hover:text-rose-300 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete project</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => setSelectedProjectForModal(null)}
+                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold ml-auto transition cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* NEW PROJECT CREATION MODAL                               */}
+      {/* ======================================================== */}
       {showNewProjectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
           <form 
             onSubmit={handleCreateProject}
-            className="w-full max-w-sm rounded-3xl bg-[#090D1A] border border-slate-700 p-6 space-y-4"
+            className="w-full max-w-sm rounded-3xl bg-[#090D1A] border border-slate-700 p-6 space-y-4 shadow-2xl"
           >
             <h3 className="text-base font-bold text-white">Create New Project</h3>
-            <input 
-              type="text"
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="e.g. Cybersecurity, AI Research, Personal"
-              autoFocus
-              className="w-full bg-[#050810] text-sm text-white px-3.5 py-2.5 rounded-xl border border-slate-700 outline-none focus:border-cyan-400"
-            />
+            
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-mono text-slate-400 uppercase">Project Title</label>
+              <input 
+                type="text"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                placeholder="e.g. The Psychology of Money, AI Research"
+                autoFocus
+                className="w-full bg-[#050810] text-sm text-white px-3.5 py-2.5 rounded-xl border border-slate-700 outline-none focus:border-cyan-400"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-mono text-slate-400 uppercase">Category Tag</label>
+              <select
+                value={newProjectCategory}
+                onChange={(e) => setNewProjectCategory(e.target.value)}
+                className="w-full bg-[#050810] text-xs text-white px-3 py-2.5 rounded-xl border border-slate-700 outline-none focus:border-cyan-400"
+              >
+                <option value="Study & Reading">Study & Reading</option>
+                <option value="System & Code">System & Code</option>
+                <option value="Design & Strategy">Design & Strategy</option>
+                <option value="Personal Growth">Personal Growth</option>
+              </select>
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -476,7 +967,7 @@ export default function ProjectManagerView({
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30"
               >
                 Create
               </button>
@@ -485,10 +976,12 @@ export default function ProjectManagerView({
         </div>
       )}
 
-      {/* Clear All Confirmation Modal */}
+      {/* ======================================================== */}
+      {/* CLEAR ALL CONFIRMATION MODAL                             */}
+      {/* ======================================================== */}
       {showClearConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-sm rounded-3xl bg-[#090D1A] border border-rose-500/40 p-6 space-y-4 text-slate-100">
+          <div className="w-full max-w-sm rounded-3xl bg-[#090D1A] border border-rose-500/40 p-6 space-y-4 text-slate-100 shadow-2xl">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400">
                 <AlertCircle className="w-5 h-5" />

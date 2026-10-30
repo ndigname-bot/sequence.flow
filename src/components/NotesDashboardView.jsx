@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Bookmark, 
   Search, 
@@ -11,7 +11,11 @@ import {
   CheckSquare, 
   Calendar,
   ExternalLink,
-  Tag
+  Tag,
+  Play,
+  Pause,
+  Mic,
+  Volume2
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 
@@ -30,6 +34,38 @@ export default function NotesDashboardView({
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteContent, setNewNoteContent] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Audio Playback for Voice Notes
+  const [playingAudioId, setPlayingAudioId] = useState(null);
+  const audioPlayerRef = useRef(null);
+
+  const togglePlayAudio = (noteId, audioDataUrl) => {
+    if (playingAudioId === noteId) {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
+      setPlayingAudioId(null);
+      return;
+    }
+
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+    }
+
+    const audio = new Audio(audioDataUrl);
+    audioPlayerRef.current = audio;
+    setPlayingAudioId(noteId);
+
+    audio.onended = () => {
+      setPlayingAudioId(null);
+      audioPlayerRef.current = null;
+    };
+    audio.onerror = () => {
+      setPlayingAudioId(null);
+      audioPlayerRef.current = null;
+    };
+    audio.play().catch(err => console.error('Audio play error:', err));
+  };
 
   // Filter notes by project and search query
   const filteredNotes = notes.filter(note => {
@@ -224,6 +260,37 @@ export default function NotesDashboardView({
                       {note.content || 'Notes captured during focus session.'}
                     </p>
 
+                    {/* Voice Memo player pill if note has audio */}
+                    {note.audioDataUrl && (
+                      <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 p-1.5 rounded-xl bg-violet-950/60 border border-violet-500/40 text-xs"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => togglePlayAudio(note.id, note.audioDataUrl)}
+                          className="w-5 h-5 rounded-full bg-violet-600 hover:bg-violet-500 text-white flex items-center justify-center shrink-0 cursor-pointer shadow-sm transition"
+                          title={playingAudioId === note.id ? 'Pause' : 'Play'}
+                        >
+                          {playingAudioId === note.id ? (
+                            <Pause className="w-2.5 h-2.5 fill-current" />
+                          ) : (
+                            <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
+                          )}
+                        </button>
+                        <span className="text-[10px] font-mono text-violet-300 font-bold truncate flex-1">
+                          Voice Memo • {note.duration || '0:15'}
+                        </span>
+                        {playingAudioId === note.id && (
+                          <span className="flex items-center gap-0.5 h-2.5 pr-1">
+                            <span className="w-0.5 h-2 bg-violet-300 animate-pulse" />
+                            <span className="w-0.5 h-3 bg-white animate-pulse delay-75" />
+                            <span className="w-0.5 h-1.5 bg-violet-300 animate-pulse delay-150" />
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2 pt-1 text-[10px] font-mono text-cyan-400/80">
                       <Tag className="w-2.5 h-2.5" />
                       <span>{note.project || 'General'}</span>
@@ -290,6 +357,58 @@ export default function NotesDashboardView({
                     <ExternalLink className="w-3 h-3" />
                   </span>
                 </div>
+
+                {/* Voice Recording Player Bar if active note has audioDataUrl */}
+                {activeNote.audioDataUrl && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-violet-950/70 to-purple-950/50 border border-violet-500/40 shadow-xl flex items-center justify-between gap-4 animate-fade-in">
+                    <div className="flex items-center gap-3.5">
+                      <button
+                        type="button"
+                        onClick={() => togglePlayAudio(activeNote.id, activeNote.audioDataUrl)}
+                        className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-400 hover:to-purple-500 text-white flex items-center justify-center shadow-lg transition cursor-pointer active:scale-95 shrink-0"
+                        title={playingAudioId === activeNote.id ? 'Pause Voice Memo' : 'Play Voice Memo'}
+                      >
+                        {playingAudioId === activeNote.id ? (
+                          <Pause className="w-5 h-5 fill-current" />
+                        ) : (
+                          <Play className="w-5 h-5 fill-current ml-0.5" />
+                        )}
+                      </button>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <Mic className="w-3.5 h-3.5 text-rose-400" />
+                            <span>Recorded Voice Memo</span>
+                          </span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-violet-900/80 border border-violet-400/40 text-violet-200 font-bold">
+                            {activeNote.duration || '0:15'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-violet-300/80 mt-0.5">
+                          {playingAudioId === activeNote.id ? 'Playing voice recording audio...' : 'Recorded hands-free in Work Companion'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {playingAudioId === activeNote.id ? (
+                      <div className="flex items-center gap-1 h-5 pr-2">
+                        <span className="w-1 h-3 bg-violet-400 animate-pulse rounded-full" />
+                        <span className="w-1 h-5 bg-cyan-300 animate-pulse delay-75 rounded-full" />
+                        <span className="w-1 h-2 bg-purple-400 animate-pulse delay-150 rounded-full" />
+                        <span className="w-1 h-4 bg-violet-300 animate-pulse delay-100 rounded-full" />
+                        <span className="w-1 h-5 bg-white animate-pulse delay-200 rounded-full" />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => togglePlayAudio(activeNote.id, activeNote.audioDataUrl)}
+                        className="px-3 py-1.5 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 text-violet-200 text-xs font-semibold border border-violet-400/30 transition cursor-pointer"
+                      >
+                        Play Audio
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Editorial Quote Box (Image 2) */}
                 <div className="p-4 rounded-2xl bg-[#050810] border-l-4 border-l-blue-500 border border-slate-800/80 text-sm text-slate-300 italic leading-relaxed">
@@ -387,6 +506,29 @@ export default function NotesDashboardView({
                 </div>
                 <h3 className="text-base font-bold text-white tracking-tight">{note.title}</h3>
                 <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{note.content}</p>
+
+                {note.audioDataUrl && (
+                  <div 
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-2 p-2 rounded-xl bg-violet-950/60 border border-violet-500/40 text-xs mt-2"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => togglePlayAudio(note.id, note.audioDataUrl)}
+                      className="w-6 h-6 rounded-full bg-violet-600 hover:bg-violet-500 text-white flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
+                      title={playingAudioId === note.id ? 'Pause' : 'Play'}
+                    >
+                      {playingAudioId === note.id ? (
+                        <Pause className="w-3 h-3 fill-current" />
+                      ) : (
+                        <Play className="w-3 h-3 fill-current ml-0.5" />
+                      )}
+                    </button>
+                    <span className="text-[10px] font-mono text-violet-300 font-bold truncate flex-1">
+                      Voice Memo • {note.duration || '0:15'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono text-cyan-400">

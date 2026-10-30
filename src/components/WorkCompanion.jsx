@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Pause, 
   Play, 
@@ -15,9 +15,14 @@ import {
   FileText,
   Clock,
   Sparkles,
-  Bookmark
+  Bookmark,
+  Mic,
+  Square,
+  Waves
 } from 'lucide-react';
 import { useDraggable } from '../utils/useDraggable';
+import { VoiceRecorder } from '../utils/voiceRecorder';
+import { sound } from '../utils/sound';
 
 export default function WorkCompanion({ 
   task, 
@@ -42,30 +47,128 @@ export default function WorkCompanion({
   const [quickTaskInput, setQuickTaskInput] = useState('');
   const [showAddStep, setShowAddStep] = useState(false);
 
+  // Voice Recording State
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [currentlyPlayingAudio, setCurrentlyPlayingAudio] = useState(null);
+  const voiceRecorderRef = useRef(null);
+  const audioPlayerRef = useRef(null);
+
   const mins = Math.floor(secondsRemaining / 60);
   const secs = secondsRemaining % 60;
   const timeFormatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 
   const nextTask = upcomingTasks[0] || null;
 
+  // Handle Note Save (Text)
   const handleNoteSubmit = (e) => {
     e.preventDefault();
     if (!quickNoteInput.trim()) return;
     onSaveNote({
       id: `note-${Date.now()}`,
+      title: quickNoteInput.trim().slice(0, 45),
       content: quickNoteInput.trim(),
-      tag: 'quick',
-      createdAt: Date.now()
+      project: task?.project || 'General',
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     });
     setQuickNoteInput('');
   };
 
+  // Start Hands-Free Voice Recording
+  const startVoiceRecording = async () => {
+    try {
+      const recorder = new VoiceRecorder();
+      voiceRecorderRef.current = recorder;
+      setIsRecordingVoice(true);
+      setRecordingSeconds(0);
+      setVoiceTranscript('');
+
+      await recorder.start({
+        onTranscriptUpdate: (text) => setVoiceTranscript(text),
+        onTimeUpdate: (sec) => setRecordingSeconds(sec)
+      });
+      sound.playAdd();
+    } catch (err) {
+      console.error('Microphone error:', err);
+      alert('Could not access microphone. Please check system permissions.');
+      setIsRecordingVoice(false);
+    }
+  };
+
+  // Stop and Save Voice Note
+  const stopVoiceRecording = async () => {
+    if (!voiceRecorderRef.current) return;
+    try {
+      const result = await voiceRecorderRef.current.stop();
+      setIsRecordingVoice(false);
+      voiceRecorderRef.current = null;
+
+      const title = result.text 
+        ? `🎙️ ${result.text.slice(0, 45)}` 
+        : `🎙️ Voice Note (${result.duration})`;
+
+      onSaveNote({
+        id: `voice-${Date.now()}`,
+        title,
+        content: result.text || `Voice recording memo (${result.duration})`,
+        audioDataUrl: result.audioDataUrl,
+        duration: result.duration,
+        project: task?.project || 'General',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      });
+      sound.playComplete();
+    } catch (err) {
+      console.error('Stop recording error:', err);
+      setIsRecordingVoice(false);
+    }
+  };
+
+  // Cancel Voice Recording
+  const cancelVoiceRecording = () => {
+    if (voiceRecorderRef.current) {
+      voiceRecorderRef.current.cancel();
+      voiceRecorderRef.current = null;
+    }
+    setIsRecordingVoice(false);
+    setVoiceTranscript('');
+  };
+
+  // Toggle Play / Pause on Recorded Audio Note
+  const togglePlayAudio = (noteId, audioDataUrl) => {
+    if (currentlyPlayingAudio === noteId) {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+      setCurrentlyPlayingAudio(null);
+    } else {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
+      const audio = new Audio(audioDataUrl);
+      audioPlayerRef.current = audio;
+      setCurrentlyPlayingAudio(noteId);
+      audio.onended = () => setCurrentlyPlayingAudio(null);
+      audio.play().catch(() => setCurrentlyPlayingAudio(null));
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (voiceRecorderRef.current) voiceRecorderRef.current.cancel();
+      if (audioPlayerRef.current) audioPlayerRef.current.pause();
+    };
+  }, []);
+
+  // Handle Add Next Step in Queue
   const handleTaskSubmit = (e) => {
     e.preventDefault();
     if (!quickTaskInput.trim()) return;
     onAddTask({
       id: `task-${Date.now()}`,
       title: quickTaskInput.trim(),
+      project: task?.project || 'General',
       duration: '25 min',
       completed: false
     });
@@ -209,7 +312,7 @@ export default function WorkCompanion({
                   className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition cursor-pointer"
                   title={isPaused ? 'Resume' : 'Pause'}
                 >
-                  {isPaused ? <Play className="w-3.5 h-3.5 text-emerald-400" /> : <Pause className="w-3.5 h-3.5" />}
+                  {isPaused ? <Play className="w-3.5 h-3.5 text-emerald-400 fill-current" /> : <Pause className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
@@ -244,7 +347,7 @@ export default function WorkCompanion({
               )}
 
               {nextTask ? (
-                <div className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-[#080D1A] border border-blue-500/20 text-slate-200">
+                <div className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-[#080D1A] border border-blue-500/20 text-slate-200">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
                     <span className="truncate">{nextTask.title}</span>
@@ -263,42 +366,101 @@ export default function WorkCompanion({
         )}
 
         {/* ======================================================== */}
-        {/* BAR 2: THE NOTES BAR (Deep Violet Theme)                 */}
+        {/* BAR 2: THE NOTES BAR WITH HANDS-FREE VOICE RECORDING     */}
         {/* ======================================================== */}
         {activeBar === 'notes' && (
           <div className="space-y-4 animate-fade-in">
-            {/* Quick Capture Box (Deep Violet) */}
-            <form onSubmit={handleNoteSubmit} className="space-y-2">
-              <div className="relative rounded-2xl bg-gradient-to-br from-[#170E2D] to-[#0D071C] border border-violet-500/30 p-3 shadow-inner">
-                <textarea
-                  value={quickNoteInput}
-                  onChange={(e) => setQuickNoteInput(e.target.value)}
-                  placeholder="Capture quick thought, video takeaway, or link (Enter to save)..."
-                  rows={3}
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleNoteSubmit(e);
-                    }
-                  }}
-                  className="w-full bg-transparent text-xs text-violet-100 placeholder-violet-400/50 outline-none resize-none font-sans leading-relaxed"
-                />
-                <div className="flex items-center justify-between pt-2 border-t border-violet-500/20 text-[10px] font-mono text-violet-400">
-                  <span>Saved in your vault</span>
+            {/* Active Voice Recording Panel OR Quick Text Capture Box */}
+            {isRecordingVoice ? (
+              <div className="rounded-2xl bg-gradient-to-br from-[#2D0D26] via-[#1D082A] to-[#0E041A] border border-rose-500/50 p-4 space-y-3 shadow-lg shadow-rose-950/50 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                    <span className="text-[11px] font-mono font-bold text-rose-300 uppercase tracking-wider">
+                      RECORDING HANDS-FREE...
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono font-extrabold text-white bg-rose-950/80 px-2 py-0.5 rounded-lg border border-rose-500/40">
+                    {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, '0')}
+                  </span>
+                </div>
+
+                {/* Animated Waveform & Live Transcript */}
+                <div className="flex items-center gap-2 py-1 px-1 bg-[#090310]/60 rounded-xl border border-rose-500/20">
+                  <span className="flex items-center gap-1 pl-2">
+                    <span className="w-1 h-3 bg-rose-400 rounded-full animate-pulse" />
+                    <span className="w-1 h-5 bg-fuchsia-300 rounded-full animate-pulse delay-75" />
+                    <span className="w-1 h-6 bg-white rounded-full animate-pulse delay-150" />
+                    <span className="w-1 h-4 bg-rose-400 rounded-full animate-pulse delay-100" />
+                    <span className="w-1 h-2 bg-violet-400 rounded-full animate-pulse delay-200" />
+                  </span>
+                  <p className="text-xs text-rose-100 italic truncate flex-1 min-w-0 pr-2">
+                    {voiceTranscript || 'Speak aloud — recording your thought...'}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-rose-500/20">
                   <button
-                    type="submit"
-                    disabled={!quickNoteInput.trim()}
-                    className="px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold flex items-center gap-1 cursor-pointer"
+                    type="button"
+                    onClick={cancelVoiceRecording}
+                    className="px-3 py-1 rounded-xl text-xs text-slate-400 hover:text-white transition cursor-pointer"
                   >
-                    <span>Save</span>
-                    <CornerDownLeft className="w-2.5 h-2.5" />
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={stopVoiceRecording}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/40 transition cursor-pointer active:scale-95"
+                  >
+                    <Square className="w-3 h-3 fill-current" />
+                    <span>Save Voice Note</span>
                   </button>
                 </div>
               </div>
-            </form>
+            ) : (
+              /* Quick Capture Box (Deep Violet) */
+              <form onSubmit={handleNoteSubmit} className="space-y-2">
+                <div className="relative rounded-2xl bg-gradient-to-br from-[#170E2D] to-[#0D071C] border border-violet-500/30 p-3 shadow-inner">
+                  <textarea
+                    value={quickNoteInput}
+                    onChange={(e) => setQuickNoteInput(e.target.value)}
+                    placeholder="Capture quick thought, or click 🎙️ below to record voice hands-free..."
+                    rows={3}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleNoteSubmit(e);
+                      }
+                    }}
+                    className="w-full bg-transparent text-xs text-violet-100 placeholder-violet-400/50 outline-none resize-none font-sans leading-relaxed"
+                  />
+                  <div className="flex items-center justify-between pt-2 border-t border-violet-500/20 text-[10px] font-mono text-violet-400">
+                    {/* Voice Recording Button */}
+                    <button
+                      type="button"
+                      onClick={startVoiceRecording}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-violet-600/30 hover:bg-rose-600/30 text-violet-200 hover:text-rose-200 border border-violet-400/40 hover:border-rose-400/40 text-[11px] font-semibold transition cursor-pointer active:scale-95 shadow-sm"
+                      title="Hands busy? Click to record a voice note"
+                    >
+                      <Mic className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+                      <span>Record Voice Note</span>
+                    </button>
 
-            {/* List of Captured Notes */}
+                    <button
+                      type="submit"
+                      disabled={!quickNoteInput.trim()}
+                      className="px-2.5 py-1 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Save</span>
+                      <CornerDownLeft className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {/* List of Captured Notes with Audio Players */}
             <div className="rounded-2xl bg-[#050810] border border-slate-800/80 p-3 max-h-[160px] overflow-y-auto space-y-2">
               <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider mb-1">
                 RECENTLY CAPTURED ({vaultNotes.length})
@@ -306,7 +468,7 @@ export default function WorkCompanion({
 
               {vaultNotes.length === 0 ? (
                 <p className="text-[11px] text-slate-500 font-mono py-2 text-center">
-                  No notes saved yet. Type above while watching or studying!
+                  No notes saved yet. Record or type above while studying!
                 </p>
               ) : (
                 vaultNotes.map((note) => (
@@ -317,6 +479,35 @@ export default function WorkCompanion({
                     <p className="text-violet-200 line-clamp-2 font-sans text-[11px]">
                       {note.content}
                     </p>
+
+                    {/* Voice Memo Player Bar if note has audioDataUrl */}
+                    {note.audioDataUrl && (
+                      <div className="flex items-center gap-2 p-1.5 rounded-lg bg-violet-950/60 border border-violet-500/30 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => togglePlayAudio(note.id, note.audioDataUrl)}
+                          className="w-5 h-5 rounded-full bg-violet-600 hover:bg-violet-500 text-white flex items-center justify-center shrink-0 transition shadow-sm cursor-pointer"
+                          title={currentlyPlayingAudio === note.id ? 'Pause' : 'Play'}
+                        >
+                          {currentlyPlayingAudio === note.id ? (
+                            <Pause className="w-2.5 h-2.5 fill-current" />
+                          ) : (
+                            <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
+                          )}
+                        </button>
+                        <span className="text-[10px] font-mono text-violet-300 font-bold truncate flex-1">
+                          Voice Memo • {note.duration || '0:15'}
+                        </span>
+                        {currentlyPlayingAudio === note.id && (
+                          <span className="flex items-center gap-0.5 h-2.5 pr-1">
+                            <span className="w-0.5 h-2 bg-violet-300 animate-pulse" />
+                            <span className="w-0.5 h-3 bg-white animate-pulse delay-75" />
+                            <span className="w-0.5 h-1.5 bg-violet-300 animate-pulse delay-150" />
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between pt-1 border-t border-violet-500/10 text-[10px]">
                       <button
                         onClick={() => onSendNoteToQueue(note.content)}
@@ -327,7 +518,7 @@ export default function WorkCompanion({
                       </button>
                       <button
                         onClick={() => onDeleteNote(note.id)}
-                        className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition"
+                        className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>

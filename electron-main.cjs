@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, screen, ipcMain } = require('electron');
+const { app, BrowserWindow, globalShortcut, screen, ipcMain, session } = require('electron');
 const path = require('path');
 
 // Force X11 / XWayland backend on Linux so Mutter honors bottom-right docking and dragging
@@ -250,6 +250,15 @@ ipcMain.on('broadcast-state', (event, { type, payload }) => {
 });
 
 app.whenReady().then(() => {
+  // Allow microphone / media access for voice recording notes
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'media') {
+      callback(true);
+    } else {
+      callback(true);
+    }
+  });
+
   createStudioWindow();
   getOrCreateFloatingWindow('ball');
 
