@@ -17,6 +17,7 @@ import {
   Sparkles,
   Bookmark
 } from 'lucide-react';
+import { useDraggable } from '../utils/useDraggable';
 
 export default function WorkCompanion({ 
   task, 
@@ -34,6 +35,7 @@ export default function WorkCompanion({
   onSendNoteToQueue,
   onAddTask
 }) {
+  const handleDragPointerDown = useDraggable();
   // Two Bars Switcher: 'queue' (Dark Blue) vs 'notes' (Deep Violet)
   const [activeBar, setActiveBar] = useState('queue'); // 'queue' | 'notes'
   const [quickNoteInput, setQuickNoteInput] = useState('');
@@ -83,8 +85,8 @@ export default function WorkCompanion({
 
         {/* Top Control Bar: Logo, Two Bar Switcher, Window Controls */}
         <div 
-          className="flex items-center justify-between gap-3 mb-4 cursor-move"
-          style={{ WebkitAppRegion: 'drag' }}
+          onPointerDown={handleDragPointerDown}
+          className="flex items-center justify-between gap-3 mb-4 cursor-grab active:cursor-grabbing select-none"
         >
           {/* Logo mark */}
           <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' }}>

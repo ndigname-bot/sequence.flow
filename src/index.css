@@ -8,7 +8,7 @@
   }
   
   body {
-    @apply bg-[#080B10] text-slate-100 font-sans overflow-x-hidden min-h-screen selection:bg-blue-600/30 selection:text-blue-200;
+    @apply bg-transparent text-slate-100 font-sans overflow-x-hidden min-h-screen selection:bg-blue-600/30 selection:text-blue-200;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;

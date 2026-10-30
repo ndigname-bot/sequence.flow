@@ -38,9 +38,10 @@ export default function App() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const urlMode = urlParams.get('mode');
-      if (urlMode) return urlMode;
+      if (urlMode === 'companion' || urlMode === 'ball') return urlMode;
+      if (urlMode === 'studio' || urlMode === 'full') return 'full';
     }
-    return localStorage.getItem('sequence_app_mode') || 'full';
+    return 'full';
   });
 
   const [autoPip, setAutoPip] = useState(true);
@@ -114,7 +115,11 @@ export default function App() {
     if (window.electronAPI) {
       if (window.electronAPI.onSetMode) {
         window.electronAPI.onSetMode((newMode) => {
-          setAppMode(newMode);
+          if (newMode === 'studio') {
+            setAppMode('full');
+          } else {
+            setAppMode(newMode);
+          }
         });
       }
       if (window.electronAPI.getAutoPipStatus) {
@@ -203,7 +208,15 @@ export default function App() {
       // Shift + Space launches floating tray or toggles
       if (e.code === 'Space' && e.shiftKey && !isInput) {
         e.preventDefault();
-        setAppMode(m => m === 'companion' ? 'full' : 'companion');
+        if (window.electronAPI) {
+          if (appMode === 'full') {
+            window.electronAPI.launchCompanion();
+          } else {
+            window.electronAPI.expandToStudio();
+          }
+        } else {
+          setAppMode(m => m === 'companion' ? 'full' : 'companion');
+        }
         return;
       }
 
@@ -310,72 +323,78 @@ export default function App() {
   const completedCount = tasks.filter(t => t.completed).length;
 
   return (
-    <div className={`min-h-screen text-slate-100 font-sans selection:bg-cyan-500/30 overflow-hidden relative ${
-      appMode === 'companion' || appMode === 'ball' ? 'bg-transparent' : 'bg-[#04070F]'
+    <div className={`w-full min-h-screen font-sans selection:bg-cyan-500/30 overflow-hidden relative ${
+      appMode === 'full' ? 'bg-[#04070F] text-slate-100' : 'bg-transparent text-slate-100'
     }`}>
       {/* ======================================================== */}
       {/* 1. COMPACT "CURRENT WORK COMPANION" MINI-WINDOW          */}
       {/* ======================================================== */}
       {appMode === 'companion' && (
-        <WorkCompanion 
-          task={activeTask}
-          upcomingTasks={tasks.filter(t => !t.completed).slice(1)}
-          onCollapseToBall={() => {
-            setAppMode('ball');
-            if (window.electronAPI?.minimizeToBall) {
-              window.electronAPI.minimizeToBall();
-            }
-          }}
-          onExpandToFull={() => {
-            if (window.electronAPI?.expandToStudio) {
-              window.electronAPI.expandToStudio();
-            } else {
-              setAppMode('full');
-            }
-          }}
-          onClose={() => {
-            if (window.electronAPI?.closeCompanion) {
-              window.electronAPI.closeCompanion();
-            }
-          }}
-          onComplete={(id) => handleCompleteTask(id)}
-          onPauseToggle={() => setIsPaused(!isPaused)}
-          isPaused={isPaused}
-          secondsRemaining={secondsRemaining}
-          onSaveNote={(note) => {
-            setVaultNotes(prev => [note, ...prev]);
-            sound.playComplete();
-          }}
-          vaultNotes={vaultNotes}
-          onDeleteNote={(id) => setVaultNotes(prev => prev.filter(n => n.id !== id))}
-          onSendNoteToQueue={(content) => {
-            handleAddTask({
-              id: `task-${Date.now()}`,
-              title: content.slice(0, 60),
-              duration: '25 min',
-              completed: false
-            });
-            sound.playAdd();
-          }}
-          onAddTask={handleAddTask}
-        />
+        <div className="w-full h-full min-h-screen flex items-center justify-center p-2 bg-transparent select-none">
+          <WorkCompanion 
+            task={activeTask}
+            upcomingTasks={tasks.filter(t => !t.completed).slice(1)}
+            onCollapseToBall={() => {
+              if (window.electronAPI?.minimizeToBall) {
+                window.electronAPI.minimizeToBall();
+              } else {
+                setAppMode('ball');
+              }
+            }}
+            onExpandToFull={() => {
+              if (window.electronAPI?.expandToStudio) {
+                window.electronAPI.expandToStudio();
+              } else {
+                setAppMode('full');
+              }
+            }}
+            onClose={() => {
+              if (window.electronAPI?.closeCompanion) {
+                window.electronAPI.closeCompanion();
+              }
+            }}
+            onComplete={(id) => handleCompleteTask(id)}
+            onPauseToggle={() => setIsPaused(!isPaused)}
+            isPaused={isPaused}
+            secondsRemaining={secondsRemaining}
+            onSaveNote={(note) => {
+              setVaultNotes(prev => [note, ...prev]);
+              sound.playComplete();
+            }}
+            vaultNotes={vaultNotes}
+            onDeleteNote={(id) => setVaultNotes(prev => prev.filter(n => n.id !== id))}
+            onSendNoteToQueue={(content) => {
+              handleAddTask({
+                id: `task-${Date.now()}`,
+                title: content.slice(0, 60),
+                duration: '25 min',
+                completed: false
+              });
+              sound.playAdd();
+            }}
+            onAddTask={handleAddTask}
+          />
+        </div>
       )}
 
       {/* ======================================================== */}
       {/* 2. FLOATING "FOCUS BALL" GEMINI CALL MODE ORB (IMAGE 4)   */}
       {/* ======================================================== */}
       {appMode === 'ball' && (
-        <FocusBall 
-          onExpand={() => {
-            setAppMode('companion');
-            if (window.electronAPI?.expandToCompanion) {
-              window.electronAPI.expandToCompanion();
-            }
-          }}
-          activeTask={activeTask}
-          secondsRemaining={secondsRemaining}
-          isPaused={isPaused}
-        />
+        <div className="w-full h-full min-h-screen flex items-center justify-center bg-transparent select-none">
+          <FocusBall 
+            onExpand={() => {
+              if (window.electronAPI?.expandToCompanion) {
+                window.electronAPI.expandToCompanion();
+              } else {
+                setAppMode('companion');
+              }
+            }}
+            activeTask={activeTask}
+            secondsRemaining={secondsRemaining}
+            isPaused={isPaused}
+          />
+        </div>
       )}
 
       {/* ======================================================== */}
@@ -486,7 +505,13 @@ export default function App() {
                     totalSeconds={1800}
                     sessionNumber={sessionsCount}
                     totalSessions={4}
-                    onToggleZen={() => setAppMode('companion')}
+                    onToggleZen={() => {
+                      if (window.electronAPI?.launchCompanion) {
+                        window.electronAPI.launchCompanion();
+                      } else {
+                        setAppMode('companion');
+                      }
+                    }}
                     onUpdateTitle={handleUpdateTitle}
                   />
 
@@ -616,7 +641,13 @@ export default function App() {
               <span>Queue</span>
             </button>
             <button
-              onClick={() => setAppMode('companion')}
+              onClick={() => {
+                if (window.electronAPI?.launchCompanion) {
+                  window.electronAPI.launchCompanion();
+                } else {
+                  setAppMode('companion');
+                }
+              }}
               className="flex flex-col items-center gap-1 text-[10px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400"
             >
               <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-600 to-violet-500 flex items-center justify-center p-0.5 shadow-glow-cyan">

@@ -9,6 +9,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   launchCompanion: () => ipcRenderer.invoke('launch-companion'),
   toggleAutoPip: (enabled) => ipcRenderer.invoke('toggle-auto-pip', enabled),
   getAutoPipStatus: () => ipcRenderer.invoke('get-auto-pip-status'),
+  
+  // Real-time smooth window dragging
+  moveWindow: (deltaX, deltaY) => ipcRenderer.send('move-window', { deltaX, deltaY }),
+
+  // State broadcasting across windows
   broadcastState: (type, payload) => ipcRenderer.send('broadcast-state', { type, payload }),
   onStateUpdated: (callback) => {
     ipcRenderer.on('state-updated', (_event, data) => callback(data));

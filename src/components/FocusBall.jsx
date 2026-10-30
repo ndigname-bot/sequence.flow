@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Maximize2, Sparkles } from 'lucide-react';
+import { useDraggable } from '../utils/useDraggable';
 
 export default function FocusBall({ 
   onExpand, 
@@ -8,6 +8,7 @@ export default function FocusBall({
   isPaused = false
 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const handlePointerDown = useDraggable(onExpand);
 
   const mins = Math.floor(secondsRemaining / 60);
   const secs = secondsRemaining % 60;
@@ -15,30 +16,28 @@ export default function FocusBall({
 
   return (
     <div 
-      className="w-full h-full min-h-[90px] flex items-center justify-center p-2 select-none"
-      style={{ WebkitAppRegion: 'drag' }}
+      onPointerDown={handlePointerDown}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      className="w-full h-full flex flex-col items-center justify-center select-none cursor-grab active:cursor-grabbing relative"
     >
       {/* Floating Info Pill on Hover */}
       {isHovered && (
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[#070C18]/95 border border-cyan-400/40 shadow-glow-cyan backdrop-blur-xl animate-fade-in text-[11px] font-sans whitespace-nowrap z-50">
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#070C18]/95 border border-cyan-400/40 shadow-glow-cyan backdrop-blur-xl animate-fade-in text-[10px] font-sans whitespace-nowrap z-50 pointer-events-none">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-          <span className="font-semibold text-white truncate max-w-[140px]">
-            {activeTask?.title || 'Sequence Focus'}
+          <span className="font-semibold text-white truncate max-w-[80px]">
+            {activeTask?.title || 'Sequence'}
           </span>
-          <span className="font-mono text-cyan-300 font-bold border-l border-slate-700 pl-1.5">
+          <span className="font-mono text-cyan-300 font-bold border-l border-slate-700 pl-1">
             {timeFormatted}
           </span>
         </div>
       )}
 
       {/* The 3D Gemini-Style Live Focus Ball */}
-      <button
-        onClick={onExpand}
-        style={{ WebkitAppRegion: 'no-drag' }}
-        className="relative group w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 animate-float"
-        title="Click to open Work Companion (Space to advance)"
+      <div
+        className="relative group w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 animate-float"
+        title="Click to expand Work Companion • Drag to move anywhere"
       >
         {/* Exterior Ambient Neon Cyan & Violet Glow Ring */}
         <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-600 to-violet-500 opacity-80 blur-lg group-hover:opacity-100 group-hover:blur-xl transition-all" />
@@ -49,7 +48,7 @@ export default function FocusBall({
           <div className="absolute top-1.5 left-2.5 w-6 h-3 rounded-full bg-white/40 blur-[1px] transform -rotate-12 pointer-events-none" />
 
           {/* Animated Waveform Bars (like Gemini call mode) */}
-          <div className="flex items-center gap-1 h-5 z-10">
+          <div className="flex items-center gap-1 h-5 z-10 pointer-events-none">
             <span className={`w-1 rounded-full bg-cyan-300 transition-all duration-300 ${isPaused ? 'h-2' : 'h-3 animate-pulse'}`} />
             <span className={`w-1 rounded-full bg-white transition-all duration-300 ${isPaused ? 'h-3' : 'h-5 animate-pulse delay-75'}`} />
             <span className={`w-1 rounded-full bg-cyan-400 transition-all duration-300 ${isPaused ? 'h-4' : 'h-4 animate-pulse delay-150'}`} />
@@ -59,7 +58,7 @@ export default function FocusBall({
           {/* Bottom violet tint rim light */}
           <div className="absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-violet-500/40 to-transparent pointer-events-none" />
         </div>
-      </button>
+      </div>
     </div>
   );
 }
