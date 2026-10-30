@@ -75,8 +75,8 @@ export default function WorkCompanion({
 
   return (
     <div className="w-full h-full flex items-center justify-center p-2 select-none pointer-events-auto">
-      {/* Floating Round-Edged Companion Card (Not Windowed, Soft Curved Borders) */}
-      <div className="relative w-full h-full rounded-[28px] bg-[#070A14]/98 border border-slate-800/90 shadow-2xl p-5 overflow-hidden flex flex-col justify-between transition-all duration-300">
+      {/* Floating Round-Edged Companion Card */}
+      <div className="relative w-full h-full rounded-[28px] bg-[#070B16] border border-slate-700/80 shadow-[0_20px_50px_rgba(0,0,0,0.85)] p-5 overflow-hidden flex flex-col justify-between transition-all duration-300">
         
         {/* Ambient Top Glow */}
         <div className={`absolute top-0 inset-x-0 h-1 transition-colors duration-500 ${
@@ -86,10 +86,10 @@ export default function WorkCompanion({
         {/* Top Control Bar: Logo, Two Bar Switcher, Window Controls */}
         <div 
           onPointerDown={handleDragPointerDown}
-          className="flex items-center justify-between gap-3 mb-4 cursor-grab active:cursor-grabbing select-none"
+          className="flex items-center justify-between gap-2 mb-3.5 cursor-grab active:cursor-grabbing select-none shrink-0"
         >
           {/* Logo mark */}
-          <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
+          <div className="flex items-center gap-1.5 shrink-0" data-no-drag>
             <span className="flex items-center gap-0.5">
               <span className={`w-1 h-3 rounded-full transition-colors ${activeBar === 'queue' ? 'bg-blue-400' : 'bg-violet-400'}`} />
               <span className={`w-1 h-4 rounded-full transition-colors ${activeBar === 'queue' ? 'bg-cyan-300' : 'bg-fuchsia-300'}`} />
@@ -101,11 +101,11 @@ export default function WorkCompanion({
           </div>
 
           {/* The Two Bars Switcher Pills (Dark Blue Queue vs Violet Notes) */}
-          <div className="flex items-center bg-[#050810] p-1 rounded-2xl border border-slate-800/80 text-[11px] font-mono" style={{ WebkitAppRegion: 'no-drag' }}>
+          <div className="flex items-center bg-[#050810] p-0.5 rounded-xl border border-slate-800 text-[11px] font-mono shrink-0" data-no-drag>
             {/* Queue Bar Button (Dark Blue) */}
             <button
               onClick={() => setActiveBar('queue')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${
                 activeBar === 'queue'
                   ? 'bg-blue-600 text-white font-bold shadow-glow-blue'
                   : 'text-slate-400 hover:text-slate-200'
@@ -121,7 +121,7 @@ export default function WorkCompanion({
             {/* Notes Bar Button (Deep Violet) */}
             <button
               onClick={() => setActiveBar('notes')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition cursor-pointer ${
                 activeBar === 'notes'
                   ? 'bg-violet-600 text-white font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -136,12 +136,12 @@ export default function WorkCompanion({
           </div>
 
           {/* Window Minimizer & Studio Expander */}
-          <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' }}>
+          <div className="flex items-center gap-1 shrink-0" data-no-drag>
             {/* Minimize -> Collapses to Floating Orb in Corner */}
             <button
               onClick={onCollapseToBall}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-cyan-300 hover:bg-slate-800/60 transition cursor-pointer"
-              title="Minimize to floating orb"
+              className="p-1 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-slate-800/60 transition cursor-pointer"
+              title="Minimize to floating Focus Ball"
             >
               <Minus className="w-3.5 h-3.5" />
             </button>
@@ -149,7 +149,7 @@ export default function WorkCompanion({
             {/* Expand -> Opens Full Studio Launchpad */}
             <button
               onClick={onExpandToFull}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition cursor-pointer"
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition cursor-pointer"
               title="Open full planning studio"
             >
               <Maximize2 className="w-3.5 h-3.5" />
@@ -159,7 +159,7 @@ export default function WorkCompanion({
             {onClose && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 transition cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 transition cursor-pointer"
                 title="Hide companion"
               >
                 <X className="w-3.5 h-3.5" />

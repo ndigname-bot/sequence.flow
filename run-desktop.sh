@@ -3,7 +3,8 @@
 cd "$(dirname "$0")"
 
 export DISPLAY="${DISPLAY:-:0}"
-export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+# Unset WAYLAND_DISPLAY so Electron runs on XWayland where window positioning and dragging work reliably
+unset WAYLAND_DISPLAY
 
 echo "Launching Sequence Flow Desktop App..."
-./node_modules/.bin/electron electron-main.cjs
+./node_modules/.bin/electron --ozone-platform=x11 electron-main.cjs

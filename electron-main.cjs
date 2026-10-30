@@ -1,9 +1,14 @@
 const { app, BrowserWindow, globalShortcut, screen, ipcMain } = require('electron');
 const path = require('path');
 
+// Force X11 / XWayland backend on Linux so Mutter honors bottom-right docking and dragging
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('ozone-platform', 'x11');
+}
+
 let studioWindow = null;
 let floatingWindow = null;
-let currentFloatingMode = 'companion'; // 'companion' | 'ball'
+let currentFloatingMode = 'ball'; // Default to compact floating ball
 let isQuitting = false;
 let autoPipEnabled = true;
 let blurTimer = null;
@@ -34,17 +39,17 @@ function createStudioWindow() {
     studioWindow.loadFile(path.join(__dirname, 'dist/index.html'), { query: { mode: 'studio' } });
   }
 
-  // Intercept Minimize: Like Zoom, automatically enters floating Companion PiP
+  // Intercept Minimize: Like Zoom/Gemini, enters compact floating Focus Ball in bottom-right corner
   studioWindow.on('minimize', (e) => {
     e.preventDefault();
-    switchToCompanion();
+    switchToBall();
   });
 
-  // Intercept Close: Like Zoom, stays active as floating companion rather than losing session
+  // Intercept Close: Like Zoom, stays active as floating ball rather than terminating focus session
   studioWindow.on('close', (e) => {
     if (!isQuitting) {
       e.preventDefault();
-      switchToCompanion();
+      switchToBall();
     }
   });
 
@@ -54,7 +59,7 @@ function createStudioWindow() {
     clearTimeout(blurTimer);
     blurTimer = setTimeout(() => {
       if (studioWindow && !studioWindow.isDestroyed() && !studioWindow.isFocused() && studioWindow.isVisible()) {
-        switchToCompanion();
+        switchToBall();
       }
     }, 1200);
   });
@@ -68,7 +73,7 @@ function createStudioWindow() {
   });
 }
 
-function getOrCreateFloatingWindow(initialMode = 'companion') {
+function getOrCreateFloatingWindow(initialMode = 'ball') {
   if (floatingWindow && !floatingWindow.isDestroyed()) {
     return floatingWindow;
   }
@@ -78,10 +83,10 @@ function getOrCreateFloatingWindow(initialMode = 'companion') {
   const { width, height } = primaryDisplay.workAreaSize;
 
   const isBall = initialMode === 'ball';
-  const winWidth = isBall ? 140 : 440;
-  const winHeight = isBall ? 140 : 580;
-  const winX = width - winWidth - 20;
-  const winY = height - winHeight - 20;
+  const winWidth = isBall ? 140 : 460;
+  const winHeight = isBall ? 140 : 560;
+  const winX = width - winWidth - 24;
+  const winY = height - winHeight - 24;
 
   floatingWindow = new BrowserWindow({
     width: winWidth,
@@ -133,10 +138,11 @@ function switchToCompanion() {
   const { width, height } = primaryDisplay.workAreaSize;
   const [currentX, currentY] = win.getPosition();
 
-  win.setSize(440, 580);
-  const newX = Math.max(10, Math.min(currentX, width - 460));
-  const newY = Math.max(10, Math.min(currentY, height - 600));
-  win.setPosition(newX, newY);
+  win.setSize(460, 560);
+  // Dock in bottom-right area, clamping safely inside visible work area
+  const targetX = Math.max(20, Math.min(currentX || (width - 480), width - 480));
+  const targetY = Math.max(20, Math.min(currentY || (height - 580), height - 580));
+  win.setPosition(targetX, targetY);
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.show();
@@ -156,9 +162,10 @@ function switchToBall() {
   const [currentX, currentY] = win.getPosition();
 
   win.setSize(140, 140);
-  const newX = Math.max(10, Math.min(currentX, width - 150));
-  const newY = Math.max(10, Math.min(currentY, height - 150));
-  win.setPosition(newX, newY);
+  // Dock in bottom-right corner
+  const targetX = Math.max(20, Math.min(currentX || (width - 160), width - 160));
+  const targetY = Math.max(20, Math.min(currentY || (height - 160), height - 160));
+  win.setPosition(targetX, targetY);
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.show();
@@ -244,16 +251,16 @@ ipcMain.on('broadcast-state', (event, { type, payload }) => {
 
 app.whenReady().then(() => {
   createStudioWindow();
-  getOrCreateFloatingWindow('companion');
+  getOrCreateFloatingWindow('ball');
 
   // Global Shortcut to toggle Always-On-Top Mini Companion: Ctrl+Shift+Space
   globalShortcut.register('CommandOrControl+Shift+Space', () => {
     if (floatingWindow && floatingWindow.isVisible()) {
       floatingWindow.hide();
     } else if (studioWindow && studioWindow.isVisible()) {
-      switchToCompanion();
+      switchToBall();
     } else {
-      switchToCompanion();
+      switchToBall();
     }
   });
 
@@ -266,7 +273,7 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createStudioWindow();
-      getOrCreateFloatingWindow('companion');
+      getOrCreateFloatingWindow('ball');
     }
   });
 });
