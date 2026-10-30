@@ -323,10 +323,13 @@ export default function ProjectManagerView({
                 <div 
                   key={proj.id}
                   onClick={() => setSelectedProjectForModal(proj)}
-                  className={`group relative rounded-3xl ${theme.bg} border-2 ${theme.border} border-l-8 ${theme.spine} shadow-2xl ${theme.glow} p-5 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-cyan-900/30 cursor-pointer min-h-[350px] overflow-hidden`}
+                  className={`group relative rounded-3xl ${theme.bg} border-2 ${theme.border} border-l-8 ${theme.spine} shadow-2xl ${theme.glow} p-5 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2.5 hover:scale-[1.02] hover:rotate-[-0.75deg] hover:shadow-cyan-500/25 cursor-pointer min-h-[350px] overflow-hidden`}
                 >
                   {/* Subtle Spine Texture Overlay */}
                   <div className="absolute top-0 bottom-0 left-0 w-2.5 bg-black/30 border-r border-white/5 pointer-events-none" />
+
+                  {/* Tactile Ambient Light Gleam Across Cover on Hover */}
+                  <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out pointer-events-none" />
 
                   {/* Top Cover Bar: Category Badge & Delete Button */}
                   <div className="flex items-center justify-between relative z-10">
@@ -340,7 +343,7 @@ export default function ProjectManagerView({
                           e.stopPropagation();
                           onDeleteProject(proj.id);
                         }}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-900/80 transition cursor-pointer opacity-40 group-hover:opacity-100"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-900/80 transition cursor-pointer opacity-40 group-hover:opacity-100 active:scale-90"
                         title="Delete this project"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -351,7 +354,7 @@ export default function ProjectManagerView({
                   {/* Center Cover Graphic & Typography */}
                   <div className="my-auto py-6 space-y-3 relative z-10 text-center">
                     {/* Visual Emblem / Circle Progress */}
-                    <div className="w-16 h-16 mx-auto rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center shadow-inner group-hover:scale-105 transition">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center shadow-inner group-hover:scale-110 group-hover:shadow-glow-cyan transition-all duration-300">
                       <span className={`text-xl font-extrabold font-mono ${theme.accentText}`}>
                         {percent > 0 ? `${percent}%` : (proj.count || '01')}
                       </span>

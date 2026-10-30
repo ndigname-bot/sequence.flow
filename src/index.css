@@ -67,6 +67,7 @@
   padding-left: 0.85rem;
 }
 
+/* Keyframe Animations for Living UI */
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.01); }
@@ -75,3 +76,84 @@
 .animate-pulse-subtle {
   animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Atmospheric Aurora Breathing */
+@keyframes aurora-breathe-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.25; }
+  50% { transform: translate(30px, -20px) scale(1.15); opacity: 0.4; }
+}
+
+@keyframes aurora-breathe-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; }
+  50% { transform: translate(-30px, 20px) scale(1.12); opacity: 0.35; }
+}
+
+.animate-aurora-1 {
+  animation: aurora-breathe-1 12s ease-in-out infinite;
+}
+
+.animate-aurora-2 {
+  animation: aurora-breathe-2 15s ease-in-out infinite;
+}
+
+/* Living Timer Breath (4-second focus breathing cadence) */
+@keyframes breathe-circle {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.25)); }
+  50% { transform: scale(1.025); filter: drop-shadow(0 0 35px rgba(0, 240, 255, 0.55)); }
+}
+
+.animate-breathe-focus {
+  animation: breathe-circle 4s ease-in-out infinite;
+}
+
+/* Card Gleam Shimmer Effect */
+@keyframes card-gleam {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX(250%) skewX(-20deg); }
+}
+
+.group:hover .animate-gleam {
+  animation: card-gleam 1.2s ease-out;
+}
+
+/* Fluid View Entry Animation */
+@keyframes view-enter {
+  0% { opacity: 0; transform: translateY(12px) scale(0.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-view-enter {
+  animation: view-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Delightful Micro Spring Pop */
+@keyframes spring-pop {
+  0% { transform: scale(0.92); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.animate-pop {
+  animation: spring-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Dynamic Equalizer Audio Waveform Bars */
+@keyframes soundwave-bar-1 {
+  0%, 100% { height: 25%; }
+  50% { height: 95%; }
+}
+
+@keyframes soundwave-bar-2 {
+  0%, 100% { height: 65%; }
+  50% { height: 30%; }
+}
+
+@keyframes soundwave-bar-3 {
+  0%, 100% { height: 40%; }
+  50% { height: 85%; }
+}
+
+.animate-wave-1 { animation: soundwave-bar-1 0.75s ease-in-out infinite; }
+.animate-wave-2 { animation: soundwave-bar-2 0.6s ease-in-out infinite 0.15s; }
+.animate-wave-3 { animation: soundwave-bar-3 0.85s ease-in-out infinite 0.3s; }
+

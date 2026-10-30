@@ -288,9 +288,9 @@ export default function FocusModeView({
             {task?.title || 'Explore the new homepage direction'}
           </h2>
 
-          {/* Large Circular Countdown Timer */}
+          {/* Large Circular Countdown Timer with Living Focus Breath */}
           <div className="flex flex-col items-center justify-center py-4 relative">
-            <div className="relative w-56 h-56 flex items-center justify-center">
+            <div className={`relative w-56 h-56 flex items-center justify-center transition-all duration-700 ${!isPaused ? 'animate-breathe-focus' : ''}`}>
               {/* SVG Timer Arc */}
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
                 {/* Background Ring */}
@@ -529,9 +529,19 @@ export default function FocusModeView({
                   {currentTrack.title}
                 </span>
               </div>
-              <span className="text-xs font-mono text-slate-400">
-                {formatTime(currentTimeSec)} / {currentTrack.duration}
-              </span>
+              <div className="flex items-center gap-2">
+                {isPlayingMusic && (
+                  <div className="flex items-end gap-1 h-3.5 pr-1">
+                    <span className="w-1 bg-cyan-400 rounded-full animate-wave-1" />
+                    <span className="w-1 bg-blue-400 rounded-full animate-wave-2" />
+                    <span className="w-1 bg-violet-400 rounded-full animate-wave-3" />
+                    <span className="w-1 bg-cyan-300 rounded-full animate-wave-1" />
+                  </div>
+                )}
+                <span className="text-xs font-mono text-slate-400">
+                  {formatTime(currentTimeSec)} / {currentTrack.duration}
+                </span>
+              </div>
             </div>
 
             {/* Scrubber Bar */}

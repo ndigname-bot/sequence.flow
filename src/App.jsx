@@ -408,7 +408,14 @@ export default function App() {
       {/* 3. FULL MINIMALIST STUDIO DASHBOARD (FIGMA FRAMEWORKS)   */}
       {/* ======================================================== */}
       {appMode === 'full' && (
-        <div className="min-h-screen flex flex-col bg-[#04070F] text-slate-100">
+        <div className="min-h-screen flex flex-col bg-[#04070F] text-slate-100 relative overflow-hidden">
+          {/* Living Atmospheric Background Aurora (Breathing, Cozy Ambiance) */}
+          <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+            <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-blue-600/15 blur-[120px] animate-aurora-1" />
+            <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-cyan-500/12 blur-[130px] animate-aurora-2" />
+            <div className="absolute -bottom-32 left-1/3 w-80 h-80 rounded-full bg-violet-600/10 blur-[140px] animate-aurora-1" />
+          </div>
+
           {/* Minimalist Top Nav with Sub-nav Pills & Customization Toggle */}
           <TopNav 
             currentTab={currentTab}
@@ -418,78 +425,80 @@ export default function App() {
             onOpenAppearance={() => setShowAppearanceModal(true)}
           />
 
-          {/* Main Content Viewport */}
-          <main className="flex-1 px-4 sm:px-8 lg:px-12 py-8 overflow-y-auto">
-            {/* VIEW 1: PROJECTS (PROJECT MANAGER - FIGMA IMAGE 3) */}
-            {currentTab === 'projects' && (
-              <ProjectManagerView 
-                projects={projects}
-                tasks={tasks}
-                notes={vaultNotes}
-                onAddTask={handleAddTask}
-                onAddProject={handleAddProject}
-                onDeleteProject={handleDeleteProject}
-                onDeleteTask={handleDeleteTask}
-                onDeleteNote={handleDeleteNote}
-                onClearAll={handleClearAllData}
-                onRestoreDemoData={handleRestoreDemoData}
-                onSelectTaskToFocus={(t) => {
-                  setTasks(prev => [t, ...prev.filter(item => item.id !== t.id)]);
-                  setCurrentTab('focus');
-                }}
-                onOpenNote={(note) => {
-                  setCurrentTab('notes');
-                }}
-                onToggleComplete={(id) => {
-                  setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-                  sound.playComplete();
-                }}
-              />
-            )}
+          {/* Main Content Viewport with Fluid View-Switching Animation */}
+          <main className="flex-1 px-4 sm:px-8 lg:px-12 py-8 overflow-y-auto relative z-10">
+            <div key={currentTab} className="animate-view-enter">
+              {/* VIEW 1: PROJECTS (PROJECT MANAGER - FIGMA IMAGE 3) */}
+              {currentTab === 'projects' && (
+                <ProjectManagerView 
+                  projects={projects}
+                  tasks={tasks}
+                  notes={vaultNotes}
+                  onAddTask={handleAddTask}
+                  onAddProject={handleAddProject}
+                  onDeleteProject={handleDeleteProject}
+                  onDeleteTask={handleDeleteTask}
+                  onDeleteNote={handleDeleteNote}
+                  onClearAll={handleClearAllData}
+                  onRestoreDemoData={handleRestoreDemoData}
+                  onSelectTaskToFocus={(t) => {
+                    setTasks(prev => [t, ...prev.filter(item => item.id !== t.id)]);
+                    setCurrentTab('focus');
+                  }}
+                  onOpenNote={(note) => {
+                    setCurrentTab('notes');
+                  }}
+                  onToggleComplete={(id) => {
+                    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+                    sound.playComplete();
+                  }}
+                />
+              )}
 
-            {/* VIEW 2: NOTES (NOTEBOOK DASHBOARD - FIGMA IMAGE 2) */}
-            {currentTab === 'notes' && (
-              <NotesDashboardView 
-                notes={vaultNotes}
-                projects={projects}
-                onAddNote={(newNote) => setVaultNotes(prev => [newNote, ...prev])}
-                onDeleteNote={handleDeleteNote}
-                onSendNoteToQueue={(content) => {
-                  handleAddTask({
-                    id: `task-${Date.now()}`,
-                    title: content.slice(0, 60),
-                    duration: '25 min',
-                    completed: false
-                  });
-                  sound.playAdd();
-                }}
-              />
-            )}
+              {/* VIEW 2: NOTES (NOTEBOOK DASHBOARD - FIGMA IMAGE 2) */}
+              {currentTab === 'notes' && (
+                <NotesDashboardView 
+                  notes={vaultNotes}
+                  projects={projects}
+                  onAddNote={(newNote) => setVaultNotes(prev => [newNote, ...prev])}
+                  onDeleteNote={handleDeleteNote}
+                  onSendNoteToQueue={(content) => {
+                    handleAddTask({
+                      id: `task-${Date.now()}`,
+                      title: content.slice(0, 60),
+                      duration: '25 min',
+                      completed: false
+                    });
+                    sound.playAdd();
+                  }}
+                />
+              )}
 
-            {/* VIEW 3: FOCUS MODE (ACTIVE TASK + SOUNDTRACK - FIGMA IMAGE 1) */}
-            {currentTab === 'focus' && (
-              <FocusModeView 
-                task={activeTask}
-                secondsRemaining={secondsRemaining}
-                isPaused={isPaused}
-                onPauseToggle={() => setIsPaused(!isPaused)}
-                onEndSession={() => handleCompleteTask(activeTask?.id)}
-                onOpenSettings={() => setShowShortcuts(true)}
-                onCaptureNote={(note) => setVaultNotes(prev => [note, ...prev])}
-                linkedNote={linkedNote}
-                onOpenNote={() => setCurrentTab('notes')}
-              />
-            )}
+              {/* VIEW 3: FOCUS MODE (ACTIVE TASK + SOUNDTRACK - FIGMA IMAGE 1) */}
+              {currentTab === 'focus' && (
+                <FocusModeView 
+                  task={activeTask}
+                  secondsRemaining={secondsRemaining}
+                  isPaused={isPaused}
+                  onPauseToggle={() => setIsPaused(!isPaused)}
+                  onEndSession={() => handleCompleteTask(activeTask?.id)}
+                  onOpenSettings={() => setShowShortcuts(true)}
+                  onCaptureNote={(note) => setVaultNotes(prev => [note, ...prev])}
+                  linkedNote={linkedNote}
+                  onOpenNote={() => setCurrentTab('notes')}
+                />
+              )}
 
-            {/* VIEW 4: FOCUS ANALYTICS (SEE THE SPACE YOU'RE MAKING - FIGMA IMAGE 0) */}
-            {currentTab === 'analytics' && (
-              <FocusAnalyticsView 
-                totalFocusedSeconds={totalFocusedSeconds}
-                completedCount={sessionsCount}
-                streakDays={streakDays}
-                onStartFocus={() => setCurrentTab('focus')}
-              />
-            )}
+              {/* VIEW 4: FOCUS ANALYTICS (SEE THE SPACE YOU'RE MAKING - FIGMA IMAGE 0) */}
+              {currentTab === 'analytics' && (
+                <FocusAnalyticsView 
+                  totalFocusedSeconds={totalFocusedSeconds}
+                  completedCount={sessionsCount}
+                  streakDays={streakDays}
+                  onStartFocus={() => setCurrentTab('focus')}
+                />
+              )}
+            </div>
           </main>
 
           {/* Mobile Bottom Navigation Bar (md:hidden) */}

@@ -32,15 +32,15 @@ export default function TopNav({
     <header className="h-16 border-b border-slate-800/80 bg-[#070A14]/95 px-4 sm:px-8 flex items-center justify-between gap-4 select-none shrink-0 z-30 backdrop-blur-md">
       {/* Left: Logo & Breadcrumbs */}
       <div className="flex items-center gap-6">
-        {/* Sequence Logo with 4 vertical waveform-like bars */}
+        {/* Sequence Logo with gentle breathing living waveform bars */}
         <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => onChangeTab('focus')}>
-          <div className="flex items-center gap-0.5 h-5">
-            <span className="w-1 h-3 rounded-full bg-cyan-400 group-hover:h-4 transition-all duration-200" />
-            <span className="w-1 h-5 rounded-full bg-blue-500 group-hover:h-3 transition-all duration-200" />
-            <span className="w-1 h-4 rounded-full bg-cyan-300 group-hover:h-5 transition-all duration-200" />
-            <span className="w-1 h-2 rounded-full bg-violet-400 group-hover:h-3 transition-all duration-200" />
+          <div className="flex items-end gap-0.5 h-5 pb-0.5">
+            <span className="w-1 bg-cyan-400 rounded-full animate-wave-1" />
+            <span className="w-1 bg-blue-500 rounded-full animate-wave-2" />
+            <span className="w-1 bg-cyan-300 rounded-full animate-wave-3" />
+            <span className="w-1 bg-violet-400 rounded-full animate-wave-1" />
           </div>
-          <span className="text-base font-bold tracking-tight text-white font-sans lowercase">
+          <span className="text-base font-bold tracking-tight text-white font-sans lowercase group-hover:text-cyan-300 transition duration-300">
             sequence
           </span>
         </div>
