@@ -15,18 +15,19 @@ export default function FocusBall({
 
   return (
     <div 
-      className="fixed bottom-8 right-8 z-50 flex items-center gap-3 select-none"
+      className="w-full h-full min-h-[90px] flex items-center justify-center p-2 select-none"
+      style={{ WebkitAppRegion: 'drag' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Floating Info Pill on Hover */}
       {isHovered && (
-        <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-[#070C18]/95 border border-cyan-400/40 shadow-glow-cyan backdrop-blur-xl animate-fade-in text-xs font-sans">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[#070C18]/95 border border-cyan-400/40 shadow-glow-cyan backdrop-blur-xl animate-fade-in text-[11px] font-sans whitespace-nowrap z-50">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-          <span className="font-semibold text-white truncate max-w-[180px]">
+          <span className="font-semibold text-white truncate max-w-[140px]">
             {activeTask?.title || 'Sequence Focus'}
           </span>
-          <span className="font-mono text-cyan-300 font-bold border-l border-slate-700 pl-2">
+          <span className="font-mono text-cyan-300 font-bold border-l border-slate-700 pl-1.5">
             {timeFormatted}
           </span>
         </div>
@@ -35,8 +36,9 @@ export default function FocusBall({
       {/* The 3D Gemini-Style Live Focus Ball */}
       <button
         onClick={onExpand}
+        style={{ WebkitAppRegion: 'no-drag' }}
         className="relative group w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 animate-float"
-        title="Click to open Work Companion mini-window"
+        title="Click to open Work Companion (Space to advance)"
       >
         {/* Exterior Ambient Neon Cyan & Violet Glow Ring */}
         <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-600 to-violet-500 opacity-80 blur-lg group-hover:opacity-100 group-hover:blur-xl transition-all" />

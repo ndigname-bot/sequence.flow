@@ -35,12 +35,19 @@ const INITIAL_NOTES = [];
 export default function App() {
   // App UI Layout State: 'companion' (mini-window) | 'ball' (floating Gemini orb) | 'full' (studio dashboard)
   const [appMode, setAppMode] = useState(() => {
-    return localStorage.getItem('sequence_app_mode') || 'companion';
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlMode = urlParams.get('mode');
+      if (urlMode) return urlMode;
+    }
+    return localStorage.getItem('sequence_app_mode') || 'full';
   });
+
+  const [autoPip, setAutoPip] = useState(true);
 
   // Current studio view when in 'full' mode: 'focus' | 'notebook' | 'all_tasks' | 'sprints' | 'insights'
   const [currentView, setCurrentView] = useState('focus');
-  const [activeProject, setActiveProject] = useState('website');
+  const [activeProject, setActiveProject] = useState('cybersecurity');
 
   // Modals
   const [showSessionCompleteTray, setShowSessionCompleteTray] = useState(false);
@@ -102,18 +109,51 @@ export default function App() {
     legacyKeys.forEach(k => localStorage.removeItem(k));
   }, []);
 
-  // Sync state
+  // Listen to IPC mode changes and Auto-PiP status from Electron
   useEffect(() => {
-    localStorage.setItem('sequence_app_mode', appMode);
     if (window.electronAPI) {
-      if (appMode === 'companion') {
-        window.electronAPI.setCompanionOverlay(true);
-      } else if (appMode === 'ball') {
-        window.electronAPI.setBallOverlay(true);
-      } else {
-        window.electronAPI.setCompanionOverlay(false);
+      if (window.electronAPI.onSetMode) {
+        window.electronAPI.onSetMode((newMode) => {
+          setAppMode(newMode);
+        });
+      }
+      if (window.electronAPI.getAutoPipStatus) {
+        window.electronAPI.getAutoPipStatus().then(status => setAutoPip(status));
       }
     }
+  }, []);
+
+  // Sync state across multiple windows via storage events
+  useEffect(() => {
+    const handleStorage = (e) => {
+      try {
+        if (e.key === 'sequence_flow_tasks_v9' && e.newValue) {
+          setTasks(JSON.parse(e.newValue));
+        }
+        if (e.key === 'sequence_vault_notes_v9' && e.newValue) {
+          setVaultNotes(JSON.parse(e.newValue));
+        }
+        if (e.key === 'sequence_projects_v9' && e.newValue) {
+          setProjects(JSON.parse(e.newValue));
+        }
+        if (e.key === 'sequence_user_name' && e.newValue) {
+          setUserName(e.newValue);
+        }
+        if (e.key === 'sequence_workspace_name' && e.newValue) {
+          setWorkspaceName(e.newValue);
+        }
+      } catch (err) {
+        console.error('Storage sync error:', err);
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  // Sync state to local storage
+  useEffect(() => {
+    localStorage.setItem('sequence_app_mode', appMode);
   }, [appMode]);
 
   useEffect(() => {
@@ -270,7 +310,9 @@ export default function App() {
   const completedCount = tasks.filter(t => t.completed).length;
 
   return (
-    <div className="min-h-screen bg-[#04070F] text-slate-100 font-sans selection:bg-cyan-500/30 overflow-hidden relative">
+    <div className={`min-h-screen text-slate-100 font-sans selection:bg-cyan-500/30 overflow-hidden relative ${
+      appMode === 'companion' || appMode === 'ball' ? 'bg-transparent' : 'bg-[#04070F]'
+    }`}>
       {/* ======================================================== */}
       {/* 1. COMPACT "CURRENT WORK COMPANION" MINI-WINDOW          */}
       {/* ======================================================== */}
@@ -278,8 +320,24 @@ export default function App() {
         <WorkCompanion 
           task={activeTask}
           upcomingTasks={tasks.filter(t => !t.completed).slice(1)}
-          onCollapseToBall={() => setAppMode('ball')}
-          onExpandToFull={() => setAppMode('full')}
+          onCollapseToBall={() => {
+            setAppMode('ball');
+            if (window.electronAPI?.minimizeToBall) {
+              window.electronAPI.minimizeToBall();
+            }
+          }}
+          onExpandToFull={() => {
+            if (window.electronAPI?.expandToStudio) {
+              window.electronAPI.expandToStudio();
+            } else {
+              setAppMode('full');
+            }
+          }}
+          onClose={() => {
+            if (window.electronAPI?.closeCompanion) {
+              window.electronAPI.closeCompanion();
+            }
+          }}
           onComplete={(id) => handleCompleteTask(id)}
           onPauseToggle={() => setIsPaused(!isPaused)}
           isPaused={isPaused}
@@ -308,7 +366,12 @@ export default function App() {
       {/* ======================================================== */}
       {appMode === 'ball' && (
         <FocusBall 
-          onExpand={() => setAppMode('companion')}
+          onExpand={() => {
+            setAppMode('companion');
+            if (window.electronAPI?.expandToCompanion) {
+              window.electronAPI.expandToCompanion();
+            }
+          }}
           activeTask={activeTask}
           secondsRemaining={secondsRemaining}
           isPaused={isPaused}
@@ -350,17 +413,47 @@ export default function App() {
             {/* CENTER VIEWPORT */}
             <main className="flex-1 overflow-y-auto px-6 py-6 md:px-10 md:py-8 space-y-6">
               {/* Mode switch helper button in header */}
-              <div className="flex items-center justify-between text-xs pb-1">
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs pb-1">
                 <span className="text-[11px] font-mono text-cyan-400 font-semibold tracking-wider">
                   {currentView === 'notebook' ? 'NOTEBOOK DASHBOARD' : 'LAUNCHPAD • STUDIO'}
                 </span>
-                <button
-                  onClick={() => setAppMode('companion')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 hover:from-cyan-300 hover:to-violet-400 text-slate-950 font-bold text-xs shadow-glow-cyan transition cursor-pointer active:scale-98"
-                >
-                  <span>🚀 Launch Floating Tray</span>
-                  <span className="text-[10px] font-mono opacity-80">(Shift + Space)</span>
-                </button>
+
+                <div className="flex items-center gap-2">
+                  {/* Zoom-style Auto-PiP on leave toggle */}
+                  <button
+                    onClick={async () => {
+                      if (window.electronAPI?.toggleAutoPip) {
+                        const next = await window.electronAPI.toggleAutoPip();
+                        setAutoPip(next);
+                      } else {
+                        setAutoPip(!autoPip);
+                      }
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-mono transition cursor-pointer ${
+                      autoPip 
+                        ? 'bg-blue-900/30 border-blue-500/40 text-cyan-300' 
+                        : 'bg-slate-900/40 border-slate-800 text-slate-500'
+                    }`}
+                    title="When you minimize or leave to Zoom / WhatsApp, automatically float the companion tray in the corner like Zoom"
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${autoPip ? 'bg-cyan-400 animate-pulse' : 'bg-slate-600'}`} />
+                    <span>Auto-PiP on leave: {autoPip ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (window.electronAPI?.launchCompanion) {
+                        window.electronAPI.launchCompanion();
+                      } else {
+                        setAppMode('companion');
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 hover:from-cyan-300 hover:to-violet-400 text-slate-950 font-bold text-xs shadow-glow-cyan transition cursor-pointer active:scale-98"
+                  >
+                    <span>🚀 Launch Floating Tray</span>
+                    <span className="text-[10px] font-mono opacity-80">(Shift + Space)</span>
+                  </button>
+                </div>
               </div>
 
               {/* VIEW: FOCUS ROOM */}

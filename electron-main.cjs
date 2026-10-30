@@ -1,18 +1,18 @@
 const { app, BrowserWindow, globalShortcut, screen, ipcMain } = require('electron');
 const path = require('path');
 
-let mainWindow = null;
-let isCompanionMode = false;
+let studioWindow = null;
+let companionWindow = null;
+let isQuitting = false;
+let autoPipEnabled = true;
+let blurTimer = null;
 
-function createWindow() {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
-
-  mainWindow = new BrowserWindow({
+function createStudioWindow() {
+  studioWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    minWidth: 420,
-    minHeight: 300,
+    minWidth: 800,
+    minHeight: 600,
     frame: true,
     autoHideMenuBar: true,
     backgroundColor: '#04070F',
@@ -24,77 +24,197 @@ function createWindow() {
     icon: path.join(__dirname, 'public/icon.svg')
   });
 
-  mainWindow.setMenuBarVisibility(false);
+  studioWindow.setMenuBarVisibility(false);
 
-  // Load built production application directly for instant offline startup
-  if (process.env.VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+  const devUrl = process.env.VITE_DEV_SERVER_URL;
+  if (devUrl) {
+    studioWindow.loadURL(`${devUrl}?mode=studio`);
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
+    studioWindow.loadFile(path.join(__dirname, 'dist/index.html'), { query: { mode: 'studio' } });
   }
 
-  // Global Shortcut to toggle Always-On-Top Mini Companion: Ctrl+Shift+Space
-  globalShortcut.register('CommandOrControl+Shift+Space', () => {
-    if (!mainWindow) return;
-    if (mainWindow.isVisible()) {
-      if (mainWindow.isFocused()) {
-        mainWindow.hide();
-      } else {
-        mainWindow.focus();
-      }
-    } else {
-      mainWindow.show();
-      mainWindow.focus();
+  // Intercept Minimize: Like Zoom, automatically enters floating Companion PiP
+  studioWindow.on('minimize', (e) => {
+    e.preventDefault();
+    switchToCompanion();
+  });
+
+  // Intercept Close: Like Zoom, stays active as floating companion rather than losing session
+  studioWindow.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault();
+      switchToCompanion();
     }
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
+  // Intercept Blur (Switching away to WhatsApp / Zoom / Browser)
+  studioWindow.on('blur', () => {
+    if (!autoPipEnabled) return;
+    clearTimeout(blurTimer);
+    blurTimer = setTimeout(() => {
+      if (studioWindow && !studioWindow.isDestroyed() && !studioWindow.isFocused() && studioWindow.isVisible()) {
+        switchToCompanion();
+      }
+    }, 1200);
+  });
+
+  studioWindow.on('focus', () => {
+    clearTimeout(blurTimer);
+  });
+
+  studioWindow.on('closed', () => {
+    studioWindow = null;
   });
 }
 
-// IPC handlers for setting Companion Overlay Mode
-ipcMain.handle('set-companion-overlay', (event, enable) => {
-  if (!mainWindow) return;
-  isCompanionMode = enable;
+function createCompanionWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
 
-  if (enable) {
-    // Mini Floating Tray in Bottom-Right above ZapZap / Zoom
-    mainWindow.setAlwaysOnTop(true, 'screen-saver');
-    mainWindow.setSize(440, 560);
-    mainWindow.setPosition(width - 460, height - 580);
+  companionWindow = new BrowserWindow({
+    width: 440,
+    height: 580,
+    x: width - 460,
+    y: height - 600,
+    minWidth: 420,
+    minHeight: 520,
+    alwaysOnTop: true,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    skipTaskbar: true,
+    show: false,
+    resizable: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'electron-preload.cjs')
+    },
+    icon: path.join(__dirname, 'public/icon.svg')
+  });
+
+  companionWindow.setAlwaysOnTop(true, 'screen-saver');
+
+  const devUrl = process.env.VITE_DEV_SERVER_URL;
+  if (devUrl) {
+    companionWindow.loadURL(`${devUrl}?mode=companion`);
   } else {
-    // Restore Studio Dashboard Size
-    mainWindow.setAlwaysOnTop(false);
-    mainWindow.setSize(1400, 900);
-    mainWindow.center();
+    companionWindow.loadFile(path.join(__dirname, 'dist/index.html'), { query: { mode: 'companion' } });
+  }
+
+  companionWindow.on('closed', () => {
+    companionWindow = null;
+  });
+}
+
+function switchToCompanion() {
+  if (studioWindow && !studioWindow.isDestroyed() && studioWindow.isVisible()) {
+    studioWindow.hide();
+  }
+  if (!companionWindow || companionWindow.isDestroyed()) {
+    createCompanionWindow();
+  }
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  companionWindow.setSize(440, 580);
+  companionWindow.setPosition(width - 460, height - 600);
+  companionWindow.setAlwaysOnTop(true, 'screen-saver');
+  companionWindow.show();
+  companionWindow.webContents.send('set-mode', 'companion');
+}
+
+function switchToStudio() {
+  if (companionWindow && !companionWindow.isDestroyed()) {
+    companionWindow.hide();
+  }
+  if (!studioWindow || studioWindow.isDestroyed()) {
+    createStudioWindow();
+  }
+  if (studioWindow.isMinimized()) {
+    studioWindow.restore();
+  }
+  studioWindow.show();
+  studioWindow.focus();
+}
+
+function switchToBall() {
+  if (!companionWindow || companionWindow.isDestroyed()) return;
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  companionWindow.setSize(100, 100);
+  companionWindow.setPosition(width - 120, height - 120);
+  companionWindow.setAlwaysOnTop(true, 'screen-saver');
+  companionWindow.webContents.send('set-mode', 'ball');
+}
+
+// IPC Handlers
+ipcMain.handle('expand-to-studio', () => {
+  switchToStudio();
+});
+
+ipcMain.handle('expand-to-companion', () => {
+  switchToCompanion();
+});
+
+ipcMain.handle('minimize-to-ball', () => {
+  switchToBall();
+});
+
+ipcMain.handle('close-companion', () => {
+  if (companionWindow && !companionWindow.isDestroyed()) {
+    companionWindow.hide();
   }
 });
 
-// IPC handler for Focus Ball Mode (Compact Floating Orb)
-ipcMain.handle('set-ball-overlay', (event, enable) => {
-  if (!mainWindow) return;
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
+ipcMain.handle('launch-companion', () => {
+  switchToCompanion();
+});
 
-  if (enable) {
-    mainWindow.setAlwaysOnTop(true, 'screen-saver');
-    mainWindow.setSize(120, 120);
-    mainWindow.setPosition(width - 140, height - 140);
-  } else {
-    mainWindow.setAlwaysOnTop(false);
-    mainWindow.setSize(1400, 900);
-    mainWindow.center();
+ipcMain.handle('toggle-auto-pip', (event, enabled) => {
+  autoPipEnabled = typeof enabled === 'boolean' ? enabled : !autoPipEnabled;
+  return autoPipEnabled;
+});
+
+ipcMain.handle('get-auto-pip-status', () => {
+  return autoPipEnabled;
+});
+
+// Broadcast state between windows
+ipcMain.on('broadcast-state', (event, { type, payload }) => {
+  if (studioWindow && !studioWindow.isDestroyed() && event.sender !== studioWindow.webContents) {
+    studioWindow.webContents.send('state-updated', { type, payload });
+  }
+  if (companionWindow && !companionWindow.isDestroyed() && event.sender !== companionWindow.webContents) {
+    companionWindow.webContents.send('state-updated', { type, payload });
   }
 });
 
 app.whenReady().then(() => {
-  createWindow();
+  createStudioWindow();
+  createCompanionWindow();
+
+  // Global Shortcut to toggle Always-On-Top Mini Companion: Ctrl+Shift+Space
+  globalShortcut.register('CommandOrControl+Shift+Space', () => {
+    if (companionWindow && companionWindow.isVisible()) {
+      companionWindow.hide();
+    } else if (studioWindow && studioWindow.isVisible()) {
+      switchToCompanion();
+    } else {
+      switchToCompanion();
+    }
+  });
+
+  // Global Shortcut to safely quit: Ctrl+Q
+  globalShortcut.register('CommandOrControl+Q', () => {
+    isQuitting = true;
+    app.quit();
+  });
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createStudioWindow();
+      createCompanionWindow();
+    }
   });
 });
 
@@ -103,5 +223,7 @@ app.on('will-quit', () => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
 });

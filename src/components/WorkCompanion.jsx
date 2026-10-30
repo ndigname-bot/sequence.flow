@@ -6,6 +6,7 @@ import {
   Check, 
   Minus, 
   Maximize2, 
+  X,
   Plus, 
   Trash2, 
   ArrowRight, 
@@ -22,6 +23,7 @@ export default function WorkCompanion({
   upcomingTasks = [],
   onCollapseToBall, 
   onExpandToFull, 
+  onClose,
   onComplete, 
   onPauseToggle, 
   isPaused,
@@ -70,9 +72,9 @@ export default function WorkCompanion({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md select-none animate-fade-in pointer-events-auto">
+    <div className="w-full h-full flex items-center justify-center p-2 select-none pointer-events-auto">
       {/* Floating Round-Edged Companion Card (Not Windowed, Soft Curved Borders) */}
-      <div className="relative w-full max-w-[430px] rounded-[32px] bg-[#070A14]/95 border border-slate-800 shadow-2xl p-6 overflow-hidden transition-all duration-300">
+      <div className="relative w-full h-full rounded-[28px] bg-[#070A14]/98 border border-slate-800/90 shadow-2xl p-5 overflow-hidden flex flex-col justify-between transition-all duration-300">
         
         {/* Ambient Top Glow */}
         <div className={`absolute top-0 inset-x-0 h-1 transition-colors duration-500 ${
@@ -80,9 +82,12 @@ export default function WorkCompanion({
         }`} />
 
         {/* Top Control Bar: Logo, Two Bar Switcher, Window Controls */}
-        <div className="flex items-center justify-between gap-3 mb-5">
+        <div 
+          className="flex items-center justify-between gap-3 mb-4 cursor-move"
+          style={{ WebkitAppRegion: 'drag' }}
+        >
           {/* Logo mark */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
             <span className="flex items-center gap-0.5">
               <span className={`w-1 h-3 rounded-full transition-colors ${activeBar === 'queue' ? 'bg-blue-400' : 'bg-violet-400'}`} />
               <span className={`w-1 h-4 rounded-full transition-colors ${activeBar === 'queue' ? 'bg-cyan-300' : 'bg-fuchsia-300'}`} />
@@ -94,7 +99,7 @@ export default function WorkCompanion({
           </div>
 
           {/* The Two Bars Switcher Pills (Dark Blue Queue vs Violet Notes) */}
-          <div className="flex items-center bg-[#050810] p-1 rounded-2xl border border-slate-800/80 text-[11px] font-mono">
+          <div className="flex items-center bg-[#050810] p-1 rounded-2xl border border-slate-800/80 text-[11px] font-mono" style={{ WebkitAppRegion: 'no-drag' }}>
             {/* Queue Bar Button (Dark Blue) */}
             <button
               onClick={() => setActiveBar('queue')}
@@ -129,7 +134,7 @@ export default function WorkCompanion({
           </div>
 
           {/* Window Minimizer & Studio Expander */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' }}>
             {/* Minimize -> Collapses to Floating Orb in Corner */}
             <button
               onClick={onCollapseToBall}
@@ -147,6 +152,17 @@ export default function WorkCompanion({
             >
               <Maximize2 className="w-3.5 h-3.5" />
             </button>
+
+            {/* Close / Hide companion */}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 transition cursor-pointer"
+                title="Hide companion"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
